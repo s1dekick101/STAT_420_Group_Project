@@ -1,0 +1,49 @@
+---
+title: "Team Statisticans Project Proposal"
+author: "Nicholas O. Brown, Ellie Jung, Angela Mei"
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Title: Data Analysis of Tech. Salaries at Amazon and Google
+
+## Team: The Statisticians
+
+Group Members:
+
+- Nicholas Brown(nbrown13@illinois.edu)
+- Ellie Jung(yjung19@illinois.edu)
+- Angela Mei(amei5@illinois.edu)
+
+## Description of the Data File
+
+The data set comprises 12,647 salary records from Amazon and Google. Although the data set has 29 variables, we will primarily focus on 'totalyearlycompensation' as the response variable, with 'level' as a categorical explanatory variable, and 'yearsofexperience' and ‘yearsatcompany’ as continuous numeric explanatory variables. Other variables such as location, gender, and education may also be used for deeper exploratory analysis.
+
+## Background Information
+
+The dataset was accessed from Kaggle, which provides detailed salary records from several top-tier companies scraped from levels.fyi. It provides a comprehensive view of the compensation structure, including base salary, bonuses, and stock grant values, in addition to various demographic and professional variables. For the purposes of our analysis, we've narrowed down the scope of our dataset to just salaries from two companies, Amazon and Google. Prior to importing the data into R, we conducted preliminary data cleaning, particularly on the 'level' variable, which was initially inconsistent and unstructured due to user-inputted data. Additionally, we corrected any spelling mistakes and clustered together similar companies (for example, “Amazon” and “Amazon.com” were combined into one company.) These steps were crucial to ensure the integrity of our analysis. Our pre-processing efforts will streamline the data analysis and enhance the reliability of our insights. 
+
+- Original Dataset:
+https://www.kaggle.com/datasets/jackogozaly/data-science-and-stem-salaries  
+- Cleaned Dataset (also stored in zip file):
+https://drive.google.com/file/d/1pwh8MJFchKCdI3w6icJVxk2FDHpigv86/view
+
+## Statement about Data
+
+Our interest in this dataset stems from our curiosity to understand the factors influencing the annual compensation of employees in top-tier companies. By analyzing this dataset, we hope to gain insights into the significance of variables such as experience, company, location, gender, and education level in determining salaries. These insights could have implications for job seekers or human resource professionals.
+
+## Evidence of Data Loaded in R
+
+```{r}
+library(readr)
+data = read_csv("Levels-Fyi-Salary-Data-Cleaned.csv")
+data
+```
