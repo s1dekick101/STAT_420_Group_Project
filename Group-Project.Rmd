@@ -30,8 +30,16 @@ The primary goal of creating a model with this data is to predict the `totalyear
 library(readr)
 data = read_csv("Levels-Fyi-Salary-Data-Cleaned.csv")
 
-# Subsetting dataset and changing some predictors to factors
+#Remove NA records
+data = na.omit(data)
 
+# Subsetting dataset and changing some predictors to factors
+data$company = as.factor(data$company)
+data$level = as.factor(data$level)
+data$title = as.factor(data$title)
+data$gender = as.factor(data$gender)
+data$Race = as.factor(data$Race)
+data$Education = as.factor(data$Education)
 ```
 
 ```{r}
