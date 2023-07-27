@@ -28,15 +28,21 @@ The primary goal of creating a model with this data is to predict the `totalyear
 ```{r message=FALSE, warning=FALSE}
 # Loading dataset
 library(readr)
-data = read_csv("Levels-Fyi-Salary-Data-Cleaned.csv")
+library(stringr)
+data = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
 
 #Remove NA records
 data = na.omit(data)
+
+#Create new column 'State' which only shows the Convert to State
+data$state = str_sub(data$location,-2,-1)
 
 # Subsetting dataset and changing some predictors to factors
 data$company = as.factor(data$company)
 data$level = as.factor(data$level)
 data$title = as.factor(data$title)
+data$location = as.factor(data$location)
+data$state = as.factor(data$state)
 data$gender = as.factor(data$gender)
 data$Race = as.factor(data$Race)
 data$Education = as.factor(data$Education)
