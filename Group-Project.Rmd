@@ -1,22 +1,77 @@
 ---
 title: "Data Analysis of Tech. Salaries at Amazon and Google"
-author: "Nicholas O. Brown, Insert Name, Insert Name"
+author: "The Statisticians"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document: 
+    theme: readable
+    toc: yes
+urlcolor: cyan
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+### <u>Introduction</u>
 
-## R Markdown
+As data science students, we're intrigued by the compensation structures within leading tech companies like Amazon and Google. To delve into this interest, we're undertaking a project to analyze a dataset of 12,647 salary records from these companies, with an aim to construct a predictive model for annual total compensation.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This dataset, `Levels-Fyi-Salary-Data-Cleaned.csv`, provides a unique and in-depth perspective into the salary structures of numerous top-tier companies. The dataset encompasses 28 variables, covering a variety of aspects such as company, level, title, location, years of experience, years at the company, and various demographic factors including gender and education level. Of particular interest to us is the `totalyearlycompensation` variable, which will serve as the response variable in our analysis.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Our interest in this dataset is driven by our curiosity about the factors that influence annual compensation in top companies. We aim to identify the key variables and their interactions that significantly impact salary levels. This would provide insights that could be invaluable to a variety of stakeholders, from job seekers and employees to human resource professionals and policymakers.
 
-```{r}
+The primary goal of creating a model with this data is to predict the `totalyearlycompensation` based on a set of predictor variables. This model will help us understand how different variables, including categorical ones like `company` and numeric ones such as `yearsofexperience` and `basesalary`, contribute to the total yearly compensation of an employee. Through this process, we also hope to identify potential trends, anomalies, or points of interest that could provide further avenues for exploration and analysis.
+
+***
+
+### <u>Methods</u>
+
+-- We choose the following model... `(PLACE HOLDER)`
+
+```{r message=FALSE, warning=FALSE}
+# Loading dataset
 library(readr)
 data = read_csv("Levels-Fyi-Salary-Data-Cleaned.csv")
-data
+
+# Subsetting dataset and changing some predictors to factors
+
 ```
+
+```{r}
+# Placeholder and we will just put the model we actually use here 
+model = 2
+```
+
+
+***
+
+### <u>Results</u>
+
+
+***
+
+### <u>Discussion</u>
+
+
+***
+
+### <u>Appendix</u> 
+
+Model 1
+```{r}
+
+```
+
+Model 2 
+```{r}
+
+```
+
+
+Model 3 
+```{r}
+
+```
+
+
+By: Nicholas O. Brown, Ellie Jung, Angela Mei
+
+***
+
