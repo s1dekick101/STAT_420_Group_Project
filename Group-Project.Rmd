@@ -176,60 +176,65 @@ library(lmtest)
 
 Predictor/Response Transforamtion Models
 ```{r}
-# Check if there are any 0 or negative values in the predictors and response variable
-sum(salaries$yearsofexperience <= 0, na.rm = TRUE)
-sum(salaries$yearsatcompany <= 0, na.rm = TRUE)
-sum(salaries$totalyearlycompensation <= 0, na.rm = TRUE)
-
-# Add a small constant before log transformation
-salaries$yearsofexperience_log = log1p(salaries$yearsofexperience)
-salaries$yearsatcompany_log = log1p(salaries$yearsatcompany)
-salaries$totalyearlycompensation_log = log1p(salaries$totalyearlycompensation)
-
 # Create a model with transformed predictors
-model_predictor_transformed = lm(totalyearlycompensation ~ yearsofexperience_log + yearsatcompany_log, data = salaries)
-summary(model_predictor_transformed)
+salaries_model_res_trans= lm(log(totalyearlycompensation) ~ yearsofexperience, data = salaries)
+summary(salaries_model_res_trans)
 
-# Create a model with transformed response
-model_response_transformed = lm(totalyearlycompensation_log ~ yearsofexperience + yearsatcompany, data = salaries)
-summary(model_response_transformed)
+# Plot the data
+ plot(log(totalyearlycompensation) ~ yearsofexperience, data = salaries,
+      xlab = "Years of Experience",
+      ylab = "Log of Total Yearly Compensation",
+      main = "Scatter plot with fitted line for log-transformed response model")
 
-# Plot for Predictor Transformed Model
-plot(salaries$totalyearlycompensation, predict(model_predictor_transformed), main="Predictor Transformed Model",
-     xlab="Actual Total Yearly Compensation", ylab="Predicted Total Yearly Compensation")
+# Add the fitted line
+abline(salaries_model_res_trans, col = "red")
 
-# Plot for Response Transformed Model
-plot(expm1(salaries$totalyearlycompensation_log), expm1(predict(model_response_transformed)), main="Response Transformed Model",
-     xlab="Actual Total Yearly Compensation", ylab="Predicted Total Yearly Compensation")
+par(mfrow = c(1, 2))
 
+# Residuals vs Fitted values plot
+plot(fitted(salaries_model_res_trans), resid(salaries_model_res_trans), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+abline(h = 0, col = "darkorange", lwd = 2)
 
-# Set graphical parameters for a 2x2 grid of plots
-par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+# Q-Q plot
+qqnorm(resid(salaries_model_res_trans), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(salaries_model_res_trans), col = "dodgerblue", lwd = 2)
 
-print("Predictor Transformed Model")
+library(lmtest)
+bptest(salaries_model_res_trans)
+shapiro.test(resid(salaries_model_res_trans))
 
-# Predictor Transformed Model Residuals
-residuals_predictor_transformed = residuals(model_predictor_transformed)
+# Build a linear model with log-transformed response and predictor
 
-# Histogram
-hist(residuals_predictor_transformed, main = "Histogram of Residuals", xlab = "Residuals", col = "skyblue")
+salaries_model_res_pred_trans = lm(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries)
 
-# Normal Q-Q plot
-qqnorm(residuals_predictor_transformed, main = "Normal Q-Q plot")
-qqline(residuals_predictor_transformed, col = "red", lwd = 2)
+summary(salaries_model_res_pred_trans)
 
-# Response Transformed Model Residuals
-residuals_response_transformed = residuals(model_response_transformed)
+par(mfrow = c(1, 1))
 
-# Histogram
-hist(residuals_response_transformed, main = "Histogram of Residuals", xlab = "Residuals", col = "skyblue")
+# Plot the data
+ plot(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries,
+      xlab = "Log of Years of Experience",
+      ylab = "Log of Total Yearly Compensation",
+      main = "Scatter plot with fitted line for log-transformed response/predict model")
 
-# Normal Q-Q plot
-qqnorm(residuals_response_transformed, main = "Normal Q-Q plot")
-qqline(residuals_response_transformed, col = "red", lwd = 2)
+# Add the fitted line
+abline(salaries_model_res_pred_trans, col = "red")
 
-# Reset graphical parameters to default
-par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
+par(mfrow = c(1, 2))
+
+# Residuals vs Fitted values plot
+plot(fitted(salaries_model_res_pred_trans), resid(salaries_model_res_pred_trans), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+# Q-Q plot
+qqnorm(resid(salaries_model_res_pred_trans), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(salaries_model_res_pred_trans), col = "dodgerblue", lwd = 2)
+
+library(lmtest)
+bptest(salaries_model_res_pred_trans)
+shapiro.test(resid(salaries_model_res_pred_trans))
 
 ```
 
