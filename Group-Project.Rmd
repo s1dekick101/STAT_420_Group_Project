@@ -47,12 +47,18 @@ salaries$gender = as.factor(salaries$gender)
 salaries$Race = as.factor(salaries$Race)
 salaries$Education = as.factor(salaries$Education)
 
-#Feel free to comment out until we get confirmation from TA on removing columns or not
-#Variable Selection 
+#Feel free to uncomment until we get confirmation from TA on removing columns or not
+#Variable Selection: Removed variables that contained redundant information 
+#salaries = subset(salaries, select = c(company, level, title,
+#                                       totalyearlycompensation,
+#                                       yearsofexperience, yearsatcompany, tag,
+#                                       basesalary, stockgrantvalue, bonus,
+#                                       gender, Race, Education, state))
+
+#Variable Selection: Removed variables that contained redundant information 
 salaries = subset(salaries, select = c(company, level, title,
                                        totalyearlycompensation,
                                        yearsofexperience, yearsatcompany, tag,
-                                       basesalary, stockgrantvalue, bonus,
                                        gender, Race, Education, state))
 ```
 
@@ -76,14 +82,65 @@ model = 2
 
 ### <u>Appendix</u> 
 
+Linear Model that includes all predictors
 ```{r}
-salaries_model_all = lm(totalyearlycompensation ~ ., data = salaries)
+salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
 ```
 
-
-AIC/BIC Model 
+AIC/BIC Models
 ```{r}
+#Didnt use p but n was used for model BIC models  
+#p = length(coef(salaries_model))
+n = length(resid(salaries_model))
 
+#Backward AIC
+salaries_model_back_aic = step(salaries_model,
+                               direction = "backward", trace = 0)
+
+#Backward BIC
+salaries_model_back_bic = step(salaries_model, direction = "backward",
+                               k = log(n), trace = 0)
+
+salaries_model_start = lm(totalyearlycompensation ~ 1, data = salaries)
+
+#Forward AIC
+salaries_model_forw_aic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "forward", trace = 0)
+
+#Forward BIC
+salaries_model_forw_bic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "forward", k = log(n), trace = 0)
+
+#Stepwise AIC
+salaries_model_both_aic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "both", trace = 0)
+
+#Stepwise BIC
+salaries_model_both_bic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "both", k = log(n), trace = 0)
+
+
+#AIC derives a model using 9 of the 10 initial inputted predictors
+#salaries_model_back_aic
+#salaries_model_forw_aic
+#salaries_model_both_aic
+
+#BIC derives a model using 4 of the 10 initial inputted predictors
+#salaries_model_back_bic
+#salaries_model_forw_bic
+#salaries_model_both_bic
 ```
 
 Model 2 
@@ -96,6 +153,12 @@ Model 3
 ```{r}
 
 ```
+
+Model Selection
+```{r}
+
+```
+
 
 
 By: Nicholas O. Brown, Ellie Jung, Angela Mei
