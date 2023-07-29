@@ -145,6 +145,31 @@ salaries_model_both_bic = step(salaries_model_start,
 
 Model 2 
 ```{r}
+library(lmtest)
+salaries_model_add = lm(log(totalyearlycompensation) ~ yearsatcompany * title * state * level, data = salaries)
+
+summary(salaries_model_add)
+
+salaries_model_fix = lm(log(totalyearlycompensation) ~ yearsatcompany * title * state * level, data = salaries, subset = cooks.distance(salaries_model_add) < 4 / length(cooks.distance(salaries_model_add)))
+
+hist(resid(salaries_model_fix))
+
+#salaries_model_int = lm(totalyearlycompensation ~ level * title * yearsofexperience * yearsatcompany, data = salaries)
+
+#anova(salaries_model_add, salaries_model_int)
+#summary(salaries_model_int)
+
+#salaries_model_three_int = lm(totalyearlycompensation ~ company * level * yearsofexperience, data = salaries)
+
+qqnorm(resid(salaries_model_fix))
+qqline(resid(salaries_model_fix))
+plot(fitted(salaries_model_fix), resid(salaries_model_fix))
+abline(h=0)
+shapiro.test(resid(salaries_model_fix))
+bptest(salaries_model_fix)
+#anova(salaries_model_add, salaries_model_two_int)
+
+#anova(salaries_model_two_int, salaries_model_three_int)
 
 ```
 
