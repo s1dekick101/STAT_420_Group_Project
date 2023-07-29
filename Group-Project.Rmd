@@ -146,27 +146,27 @@ salaries_model_both_bic = step(salaries_model_start,
 Model 2 
 ```{r}
 library(lmtest)
-salaries_model_add = lm(log(totalyearlycompensation) ~ yearsatcompany * title * state * level, data = salaries)
-
-summary(salaries_model_add)
-
-salaries_model_fix = lm(log(totalyearlycompensation) ~ yearsatcompany * title * state * level, data = salaries, subset = cooks.distance(salaries_model_add) < 4 / length(cooks.distance(salaries_model_add)))
-
-hist(resid(salaries_model_fix))
-
-#salaries_model_int = lm(totalyearlycompensation ~ level * title * yearsofexperience * yearsatcompany, data = salaries)
-
-#anova(salaries_model_add, salaries_model_int)
-#summary(salaries_model_int)
-
-#salaries_model_three_int = lm(totalyearlycompensation ~ company * level * yearsofexperience, data = salaries)
-
-qqnorm(resid(salaries_model_fix))
-qqline(resid(salaries_model_fix))
-plot(fitted(salaries_model_fix), resid(salaries_model_fix))
-abline(h=0)
-shapiro.test(resid(salaries_model_fix))
-bptest(salaries_model_fix)
+# salaries_model_add = lm(log(totalyearlycompensation) ~ yearsatcompany * title * state * level, data = salaries)
+# 
+# summary(salaries_model_add)
+# 
+# salaries_model_fix = lm(log(totalyearlycompensation) ~ yearsatcompany * title * state * level, data = salaries, subset = cooks.distance(salaries_model_add) < 4 / length(cooks.distance(salaries_model_add)))
+# 
+# hist(resid(salaries_model_fix))
+# 
+# #salaries_model_int = lm(totalyearlycompensation ~ level * title * yearsofexperience * yearsatcompany, data = salaries)
+# 
+# #anova(salaries_model_add, salaries_model_int)
+# #summary(salaries_model_int)
+# 
+# #salaries_model_three_int = lm(totalyearlycompensation ~ company * level * yearsofexperience, data = salaries)
+# 
+# qqnorm(resid(salaries_model_fix))
+# qqline(resid(salaries_model_fix))
+# plot(fitted(salaries_model_fix), resid(salaries_model_fix))
+# abline(h=0)
+# shapiro.test(resid(salaries_model_fix))
+# bptest(salaries_model_fix)
 #anova(salaries_model_add, salaries_model_two_int)
 
 #anova(salaries_model_two_int, salaries_model_three_int)
@@ -174,8 +174,62 @@ bptest(salaries_model_fix)
 ```
 
 
-Model 3 
+Predictor/Response Transforamtion Models
 ```{r}
+# Check if there are any 0 or negative values in the predictors and response variable
+sum(salaries$yearsofexperience <= 0, na.rm = TRUE)
+sum(salaries$yearsatcompany <= 0, na.rm = TRUE)
+sum(salaries$totalyearlycompensation <= 0, na.rm = TRUE)
+
+# Add a small constant before log transformation
+salaries$yearsofexperience_log = log1p(salaries$yearsofexperience)
+salaries$yearsatcompany_log = log1p(salaries$yearsatcompany)
+salaries$totalyearlycompensation_log = log1p(salaries$totalyearlycompensation)
+
+# Create a model with transformed predictors
+model_predictor_transformed = lm(totalyearlycompensation ~ yearsofexperience_log + yearsatcompany_log, data = salaries)
+summary(model_predictor_transformed)
+
+# Create a model with transformed response
+model_response_transformed = lm(totalyearlycompensation_log ~ yearsofexperience + yearsatcompany, data = salaries)
+summary(model_response_transformed)
+
+# Plot for Predictor Transformed Model
+plot(salaries$totalyearlycompensation, predict(model_predictor_transformed), main="Predictor Transformed Model",
+     xlab="Actual Total Yearly Compensation", ylab="Predicted Total Yearly Compensation")
+
+# Plot for Response Transformed Model
+plot(expm1(salaries$totalyearlycompensation_log), expm1(predict(model_response_transformed)), main="Response Transformed Model",
+     xlab="Actual Total Yearly Compensation", ylab="Predicted Total Yearly Compensation")
+
+
+# Set graphical parameters for a 2x2 grid of plots
+par(mfrow = c(2, 2), mar = c(4, 4, 2, 1))
+
+print("Predictor Transformed Model")
+
+# Predictor Transformed Model Residuals
+residuals_predictor_transformed = residuals(model_predictor_transformed)
+
+# Histogram
+hist(residuals_predictor_transformed, main = "Histogram of Residuals", xlab = "Residuals", col = "skyblue")
+
+# Normal Q-Q plot
+qqnorm(residuals_predictor_transformed, main = "Normal Q-Q plot")
+qqline(residuals_predictor_transformed, col = "red", lwd = 2)
+
+# Response Transformed Model Residuals
+residuals_response_transformed = residuals(model_response_transformed)
+
+# Histogram
+hist(residuals_response_transformed, main = "Histogram of Residuals", xlab = "Residuals", col = "skyblue")
+
+# Normal Q-Q plot
+qqnorm(residuals_response_transformed, main = "Normal Q-Q plot")
+qqline(residuals_response_transformed, col = "red", lwd = 2)
+
+# Reset graphical parameters to default
+par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
 
 ```
 
