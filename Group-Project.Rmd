@@ -130,18 +130,15 @@ salaries_model_both_bic = step(salaries_model_start,
                                title + yearsofexperience + yearsatcompany + tag +
                                gender + Race + Education + state,
                                direction = "both", k = log(n), trace = 0)
-
-
-#AIC derives a model using 9 of the 10 initial inputted predictors
-#salaries_model_back_aic
-#salaries_model_forw_aic
-#salaries_model_both_aic
-
-#BIC derives a model using 4 of the 10 initial inputted predictors
-#salaries_model_back_bic
-#salaries_model_forw_bic
-#salaries_model_both_bic
 ```
+
+-- Using AIC searching methods we derive the same model that use 9 of the 10 given predictors
+
+  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_aic)[-1])`</u>**
+  
+-- Using BIC searching methods we derive the same model that use 4 of the 10 given predictors
+
+  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_bic)[-1])`</u>**
 
 Model 2 
 ```{r}
@@ -275,7 +272,6 @@ Model Selection
 ```{r}
 
 ```
-
 
 
 By: Nicholas O. Brown, Ellie Jung, Angela Mei
