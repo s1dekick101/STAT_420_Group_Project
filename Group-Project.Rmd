@@ -83,7 +83,8 @@ salaries = subset(salaries, select = c(company, level, title,
 1. Selection of Predictors Using AIC/BIC Methodology
 
 ```{r}
-#Model that has 'totalyearlycompensation' as the response variable and all remaining variables serve as the predictors
+#Model that has 'totalyearlycompensation' as the response variable and all remaining variables
+#serve as the predictors
 salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
 
 #Backward AIC
@@ -93,56 +94,69 @@ salaries_model_back_aic = step(salaries_model,
 #Backward BIC
 salaries_model_back_bic = step(salaries_model, direction = "backward",
                                k = log(nrow(salaries)), trace = 0)
-
 ```
+
+-- Using the AIC searching method, we derive a model that uses 9 of the 10 given predictors
+
+   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_aic)[-1])`</u>**
+  
+-- Using the BIC searching method, we derive a model that uses 4 of the 10 given predictors
+
+   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_bic)[-1])`</u>**
 
 Please see Appendix for forward and stepwise procedures.
   
 
 ```{r}
+#Performing anova test on the AIC and BIC models 
 anova(salaries_model_back_bic, salaries_model_back_aic)
 ```
 
-The larger AIC model is preferred.
+Based upon the results of our test, we calculate a p-value of `r anova(salaries_model_back_bic, salaries_model_back_aic)[2, "Pr(>F)"]` meaning that we reject BIC model; thus, the larger AIC model (`salaries_model_back_aic`) is preferred. 
 
 ```{r}
-#Check for collinearity
+#Checking the collinearity of the AIC model 
 car::vif(salaries_model_back_aic) #Nothing too bad
 ```
-
   
 2. Performing Model Transformations
 
+**ADD JUSTIFICATION FOR REMOVIING STATE AND YEARSATCOMPANY PREDICTORS... not sure what to put 
+
 ```{r}
-#Transform log response to improve linearity
+#Performing log response transformation to improve linearity
 aic_model_log = lm(log(totalyearlycompensation) ~ company + yearsofexperience + title + level + gender + Race + Education, data = salaries)
 
 #Add interactions to predictors to improve normality, linearity and constant variance
 aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries)
 
 anova(aic_model_log, aic_model_trans)
-
-#Remove influential data from the model
-aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
-
 ```
+
+Based upon the results of our test, we calculate a p-value of `r anova(aic_model_log, aic_model_trans)[2, "Pr(>F)"]` meaning that we reject the `aic_model_log`; thus, the `aic_model_trans` model is preferred. 
+
+```{r}
+#Removing influential data points from the model
+aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
+```
+
 ###############################################################
 
 3. Run Diagnostics
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #Importing libraries
 library(car)
 library(lmtest)
 library(boot)
 library(caret)
 
-#Implementing helper functions. Provide brief description of what this function does 
+#LOOCV RMSE Function - ... 
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
 
-#Run diagnostics
+#Diagnostics
 summary(aic_model_final)$adj 
 #get_loocv_rmse(aic_model_final)
 shapiro.test(resid(aic_model_final))
@@ -278,7 +292,7 @@ salaries_model_back_aic = step(salaries_model,
 
 #Backward BIC
 salaries_model_back_bic = step(salaries_model, direction = "backward",
-                               k = log(n), trace = 0)
+                               k = log(nrow(salaries)), trace = 0)
 
 salaries_model_start = lm(totalyearlycompensation ~ 1, data = salaries)
 
@@ -294,7 +308,7 @@ salaries_model_forw_bic = step(salaries_model_start,
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
                                gender + Race + Education + state,
-                               direction = "forward", k = log(n), trace = 0)
+                               direction = "forward", k = log(nrow(salaries)), trace = 0)
 
 #Stepwise AIC
 salaries_model_both_aic = step(salaries_model_start, 
@@ -308,8 +322,9 @@ salaries_model_both_bic = step(salaries_model_start,
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
                                gender + Race + Education + state,
-                               direction = "both", k = log(n), trace = 0)
+                               direction = "both", k = log(nrow(salaries)), trace = 0)
 ```
+
 
 -- Using AIC searching methods we derive the same model that use 9 of the 10 given predictors
 
@@ -318,6 +333,7 @@ salaries_model_both_bic = step(salaries_model_start,
 -- Using BIC searching methods we derive the same model that use 4 of the 10 given predictors
 
   AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_bic)[-1])`</u>**
+
 
 Model 2 
 ```{r}
