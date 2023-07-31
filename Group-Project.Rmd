@@ -23,6 +23,10 @@ The primary goal of creating a model with this data is to predict the `totalyear
 
 ### <u>Methods</u>
 
+```{r setup, echo = FALSE, message = FALSE, warning = FALSE}
+options(digits = 4)
+```
+
 #### Description of the original data file
 - company: The company the employee works for
 - level: The rank of the employee
@@ -43,7 +47,9 @@ The primary goal of creating a model with this data is to predict the `totalyear
 library(readr)
 library(stringr)
 salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
-head(salaries)
+
+#Is this necessary?
+#head(salaries)
 
 #Remove NA records
 salaries = na.omit(salaries)
@@ -69,11 +75,11 @@ salaries$Education = as.factor(salaries$Education)
 #                                       basesalary, stockgrantvalue, bonus,
 #                                       gender, Race, Education, state))
 
-#Variable Selection: Removed variables that contained redundant information 
+#Variable Selection: Removed variables that contain redundant information or lack of information 
 salaries = subset(salaries, select = c(company, level, title,
                                        totalyearlycompensation,
                                        yearsofexperience, yearsatcompany, tag,
-                                       gender, Race, Education, state))
+                                       gender, Race, Education))
 
 #salaries = subset(salaries, salaries$totalyearlycompensation < 1000000) #testing out removing salaries over 1mil (6 records)
 ```
@@ -83,8 +89,7 @@ salaries = subset(salaries, select = c(company, level, title,
 1. Selection of Predictors Using AIC/BIC Methodology
 
 ```{r}
-#Model that has 'totalyearlycompensation' as the response variable and all remaining variables
-#serve as the predictors
+#Model w/ 'totalyearlycompensation' as the response variable and all remaining variables as the predictors
 salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
 
 #Backward AIC
@@ -96,11 +101,11 @@ salaries_model_back_bic = step(salaries_model, direction = "backward",
                                k = log(nrow(salaries)), trace = 0)
 ```
 
--- Using the AIC searching method, we derive a model that uses 9 of the 10 given predictors
+-- Using the AIC searching method, we derive a model that uses 7 of the 9 given predictors
 
    Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_aic)[-1])`</u>**
   
--- Using the BIC searching method, we derive a model that uses 4 of the 10 given predictors
+-- Using the BIC searching method, we derive a model that uses 4 of the 9 given predictors
 
    Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_bic)[-1])`</u>**
 
@@ -112,7 +117,7 @@ Please see Appendix for forward and stepwise procedures.
 anova(salaries_model_back_bic, salaries_model_back_aic)
 ```
 
-Based upon the results of our test, we calculate a p-value of `r anova(salaries_model_back_bic, salaries_model_back_aic)[2, "Pr(>F)"]` meaning that we reject BIC model; thus, the larger AIC model (`salaries_model_back_aic`) is preferred. 
+Based upon the results of our test, we calculate a p-value of `r anova(salaries_model_back_bic, salaries_model_back_aic)[2, "Pr(>F)"]` meaning that we reject the BIC model and accept the larger AIC model (`salaries_model_back_aic`). 
 
 ```{r}
 #Checking the collinearity of the AIC model 
@@ -120,8 +125,6 @@ car::vif(salaries_model_back_aic) #Nothing too bad
 ```
   
 2. Performing Model Transformations
-
-**ADD JUSTIFICATION FOR REMOVIING STATE AND YEARSATCOMPANY PREDICTORS... not sure what to put 
 
 ```{r}
 #Performing log response transformation to improve linearity
@@ -133,7 +136,7 @@ aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience
 anova(aic_model_log, aic_model_trans)
 ```
 
-Based upon the results of our test, we calculate a p-value of `r anova(aic_model_log, aic_model_trans)[2, "Pr(>F)"]` meaning that we reject the `aic_model_log`; thus, the `aic_model_trans` model is preferred. 
+Based upon the results of our test, we calculate a p-value of < 2.2e-16 meaning that we reject the `aic_model_log`; thus, the `aic_model_trans` model is preferred. 
 
 ```{r}
 #Removing influential data points from the model
@@ -150,18 +153,27 @@ library(car)
 library(lmtest)
 library(boot)
 library(caret)
+library(knitr)
 
 #LOOCV RMSE Function - ... 
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
 
-#Diagnostics
-summary(aic_model_final)$adj 
+#Diagnostics.. not sure if we should still include it now that its results are now in a table 
+#summary(aic_model_final)$adj 
 #get_loocv_rmse(aic_model_final)
-shapiro.test(resid(aic_model_final))
-bptest(aic_model_final)
+#shapiro.test(resid(aic_model_final))$p.value
+#test = bptest(aic_model_final)$p.value
 
+#Diagnostics Table 
+row_names = c("Adjusted R", "LOOCV-RMSE", "Shapiro Test", "BP Test")
+column_names = c(" ", "Model")
+diagnostics = c(summary(aic_model_final)$adj,get_loocv_rmse(aic_model_final),
+                (shapiro.test(resid(aic_model_final))$p.value),
+                bptest(aic_model_final)$p.value)
+df_results = data.frame(row_names, diagnostics)
+kable(df_results, "simple", col.names = column_names)
 ```
 
 ###############################################################
@@ -169,10 +181,12 @@ bptest(aic_model_final)
 4. Testing model using test / train 
 
 ```{r, message = FALSE, warning = FALSE}
-set.seed(22)
+#Importing library 
+library(caret)
 
 #Split the data 70-30 train and test set
 #trn_idx = sample(1:nrow(salaries), 1608)
+set.seed(22)
 trn_idx = createDataPartition(salaries$level, p = 0.7, list = F)
 trn = salaries[trn_idx, ]
 tst = salaries[-trn_idx, ]
@@ -182,19 +196,18 @@ actual_salary = tst$totalyearlycompensation
 pred_salary = exp(predict(aic_model_final, tst))
 max_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary), max(pred_salary))
 percent_error = mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
-
 ```
 
 5. Model simulation  
 
 ```{r, message = FALSE, warning = FALSE}
 
-#Simulation
+#Simulation Set-Up
 num_sims = 1000
 rmse_trn = rep(0, num_sims)
 rmse_tst = rep(0, num_sims)
 
-#Implementing helper functions.
+#RMSE Function - ... 
 rmse = function(y, y_hat){
   sqrt(sum((y - y_hat) ^ 2) / length(y))
 }
@@ -274,6 +287,35 @@ Predictions?
 ***
 
 ### <u>Appendix</u> 
+
+
+```{r warning=FALSE}
+#HERE FOR NOW BUT WILL BE CLEANED UP
+salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
+
+#Remove NA records
+salaries = na.omit(salaries)
+
+#Create new column 'State' which converts location to just the state abbreviation
+salaries$state = str_sub(salaries$location,-2,-1)
+
+#Changing some predictors to factors
+salaries$company = as.factor(salaries$company)
+salaries$level = as.factor(salaries$level)
+salaries$title = as.factor(salaries$title)
+salaries$location = as.factor(salaries$location)
+salaries$state = as.factor(salaries$state)
+salaries$gender = as.factor(salaries$gender)
+salaries$Race = as.factor(salaries$Race)
+salaries$Education = as.factor(salaries$Education)
+
+#Variable Selection: Removed variables that contain redundant information or lack of information 
+salaries = subset(salaries, select = c(company, level, title,
+                                       totalyearlycompensation,
+                                       yearsofexperience, yearsatcompany, tag,
+                                       gender, Race, state, Education))
+```
+
 
 Linear Model that includes all predictors
 ```{r}

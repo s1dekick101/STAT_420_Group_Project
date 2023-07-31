@@ -437,24 +437,11 @@ employee</li>
 library(readr)
 library(stringr)
 salaries = read_csv(&quot;Levels-Fyi-Salary-Data-Cleaned-US.csv&quot;)
-head(salaries)</code></pre>
-<pre><code>## # A tibble: 6 × 29
-##   timestamp           company level title        totalyearlycompensat…¹ location
-##   &lt;chr&gt;               &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;                         &lt;dbl&gt; &lt;chr&gt;   
-## 1 8/4/2021 22:17:05   Amazon  L3    Product Des…                 135000 Aliso V…
-## 2 4/8/2021 18:29:32   Google  L3    Product Des…                  60000 Annanda…
-## 3 9/1/2020 6:02:37    Amazon  L1    Data Scient…                 126000 Antioch…
-## 4 5/25/2021 17:00:37  Amazon  L4    Business An…                  65000 Arizona…
-## 5 10/14/2020 11:19:28 Amazon  L5    Business An…                 170000 Arizona…
-## 6 2/6/2020 15:54:02   Amazon  L2    Software En…                 210000 Arlingt…
-## # ℹ abbreviated name: ¹​totalyearlycompensation
-## # ℹ 23 more variables: yearsofexperience &lt;dbl&gt;, yearsatcompany &lt;dbl&gt;,
-## #   tag &lt;chr&gt;, basesalary &lt;dbl&gt;, stockgrantvalue &lt;dbl&gt;, bonus &lt;dbl&gt;,
-## #   gender &lt;chr&gt;, otherdetails &lt;chr&gt;, cityid &lt;dbl&gt;, dmaid &lt;dbl&gt;,
-## #   rowNumber &lt;dbl&gt;, Masters_Degree &lt;dbl&gt;, Bachelors_Degree &lt;dbl&gt;,
-## #   Doctorate_Degree &lt;dbl&gt;, Highschool &lt;dbl&gt;, Some_College &lt;dbl&gt;,
-## #   Race_Asian &lt;dbl&gt;, Race_White &lt;dbl&gt;, Race_Two_Or_More &lt;dbl&gt;, …</code></pre>
-<pre class="r"><code>#Remove NA records
+
+#Is this necessary?
+#head(salaries)
+
+#Remove NA records
 salaries = na.omit(salaries)
 
 #Create new column &#39;State&#39; which converts location to just the state abbreviation
@@ -478,11 +465,11 @@ salaries$Education = as.factor(salaries$Education)
 #                                       basesalary, stockgrantvalue, bonus,
 #                                       gender, Race, Education, state))
 
-#Variable Selection: Removed variables that contained redundant information 
+#Variable Selection: Removed variables that contain redundant information or lack of information 
 salaries = subset(salaries, select = c(company, level, title,
                                        totalyearlycompensation,
                                        yearsofexperience, yearsatcompany, tag,
-                                       gender, Race, Education, state))
+                                       gender, Race, Education))
 
 #salaries = subset(salaries, salaries$totalyearlycompensation &lt; 1000000) #testing out removing salaries over 1mil (6 records)</code></pre>
 </div>
@@ -491,8 +478,7 @@ salaries = subset(salaries, select = c(company, level, title,
 <ol style="list-style-type: decimal">
 <li>Selection of Predictors Using AIC/BIC Methodology</li>
 </ol>
-<pre class="r"><code>#Model that has &#39;totalyearlycompensation&#39; as the response variable and all remaining variables
-#serve as the predictors
+<pre class="r"><code>#Model w/ &#39;totalyearlycompensation&#39; as the response variable and all remaining variables as the predictors
 salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
 
 #Backward AIC
@@ -502,13 +488,12 @@ salaries_model_back_aic = step(salaries_model,
 #Backward BIC
 salaries_model_back_bic = step(salaries_model, direction = &quot;backward&quot;,
                                k = log(nrow(salaries)), trace = 0)</code></pre>
-<p>– Using the AIC searching method, we derive a model that uses 9 of
-the 10 given predictors</p>
+<p>– Using the AIC searching method, we derive a model that uses 7 of
+the 9 given predictors</p>
 <p>Selected Predictors: <strong><u>company, level, title,
-yearsofexperience, yearsatcompany, gender, Race, Education,
-state</u></strong></p>
+yearsofexperience, gender, Race, Education</u></strong></p>
 <p>– Using the BIC searching method, we derive a model that uses 4 of
-the 10 given predictors</p>
+the 9 given predictors</p>
 <p>Selected Predictors: <strong><u>company, level, title,
 yearsofexperience</u></strong></p>
 <p>Please see Appendix for forward and stepwise procedures.</p>
@@ -518,32 +503,28 @@ anova(salaries_model_back_bic, salaries_model_back_aic)</code></pre>
 ## 
 ## Model 1: totalyearlycompensation ~ company + level + title + yearsofexperience
 ## Model 2: totalyearlycompensation ~ company + level + title + yearsofexperience + 
-##     yearsatcompany + gender + Race + Education + state
-##   Res.Df        RSS Df Sum of Sq      F    Pr(&gt;F)    
-## 1   3191 1.4872e+13                                  
-## 2   3147 1.4177e+13 44 6.946e+11 3.5042 9.889e-14 ***
+##     gender + Race + Education
+##   Res.Df      RSS Df Sum of Sq    F  Pr(&gt;F)    
+## 1   3191 1.49e+13                              
+## 2   3181 1.46e+13 10   2.4e+11 5.21 1.3e-07 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <p>Based upon the results of our test, we calculate a p-value of
-9.8890603^{-14} meaning that we reject BIC model; thus, the larger AIC
-model (<code>salaries_model_back_aic</code>) is preferred.</p>
+1.2552^{-7} meaning that we reject the BIC model and accept the larger
+AIC model (<code>salaries_model_back_aic</code>).</p>
 <pre class="r"><code>#Checking the collinearity of the AIC model 
 car::vif(salaries_model_back_aic) #Nothing too bad</code></pre>
-<pre><code>##                       GVIF Df GVIF^(1/(2*Df))
-## company           2.187493  1        1.479018
-## level             5.075662  8        1.106862
-## title             3.433374 14        1.045040
-## yearsofexperience 2.563486  1        1.601089
-## yearsatcompany    1.509887  1        1.228775
-## gender            1.218811  2        1.050713
-## Race              1.458571  4        1.048313
-## Education         1.566455  4        1.057705
-## state             3.308836 33        1.018296</code></pre>
+<pre><code>##                    GVIF Df GVIF^(1/(2*Df))
+## company           1.547  1           1.244
+## level             3.993  8           1.090
+## title             2.361 14           1.031
+## yearsofexperience 2.434  1           1.560
+## gender            1.194  2           1.045
+## Race              1.330  4           1.036
+## Education         1.405  4           1.043</code></pre>
 <ol start="2" style="list-style-type: decimal">
 <li>Performing Model Transformations</li>
 </ol>
-<p>**ADD JUSTIFICATION FOR REMOVIING STATE AND YEARSATCOMPANY
-PREDICTORS… not sure what to put</p>
 <pre class="r"><code>#Performing log response transformation to improve linearity
 aic_model_log = lm(log(totalyearlycompensation) ~ company + yearsofexperience + title + level + gender + Race + Education, data = salaries)
 
@@ -557,14 +538,14 @@ anova(aic_model_log, aic_model_trans)</code></pre>
 ##     title + level + gender + Race + Education
 ## Model 2: log(totalyearlycompensation) ~ (company + yearsofexperience + 
 ##     title)^2 + level + gender + Race + Education
-##   Res.Df     RSS Df Sum of Sq      F    Pr(&gt;F)    
-## 1   3181 105.054                                  
-## 2   3152  98.216 29    6.8377 7.5668 &lt; 2.2e-16 ***
+##   Res.Df   RSS Df Sum of Sq    F Pr(&gt;F)    
+## 1   3181 105.1                             
+## 2   3152  98.2 29      6.84 7.57 &lt;2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<p>Based upon the results of our test, we calculate a p-value of
-6.3684668^{-30} meaning that we reject the <code>aic_model_log</code>;
-thus, the <code>aic_model_trans</code> model is preferred.</p>
+<p>Based upon the results of our test, we calculate a p-value of &lt;
+2.2e-16 meaning that we reject the <code>aic_model_log</code>; thus, the
+<code>aic_model_trans</code> model is preferred.</p>
 <pre class="r"><code>#Removing influential data points from the model
 aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) &lt; 4 / length(cooks.distance(aic_model_trans)))</code></pre>
 <div id="section" class="section level63">
@@ -577,38 +558,65 @@ library(car)
 library(lmtest)
 library(boot)
 library(caret)
+library(knitr)
 
 #LOOCV RMSE Function - ... 
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
 
-#Diagnostics
-summary(aic_model_final)$adj </code></pre>
-<pre><code>## [1] 0.841717</code></pre>
-<pre class="r"><code>#get_loocv_rmse(aic_model_final)
-shapiro.test(resid(aic_model_final))</code></pre>
-<pre><code>## 
-##  Shapiro-Wilk normality test
-## 
-## data:  resid(aic_model_final)
-## W = 0.99373, p-value = 4.805e-10</code></pre>
-<pre class="r"><code>bptest(aic_model_final)</code></pre>
-<pre><code>## 
-##  studentized Breusch-Pagan test
-## 
-## data:  aic_model_final
-## BP = 124.51, df = 62, p-value = 4.358e-06</code></pre>
+#Diagnostics.. not sure if we should still include it now that its results are now in a table 
+#summary(aic_model_final)$adj 
+#get_loocv_rmse(aic_model_final)
+#shapiro.test(resid(aic_model_final))$p.value
+#test = bptest(aic_model_final)$p.value
+
+#Diagnostics Table 
+row_names = c(&quot;Adjusted R&quot;, &quot;LOOCV-RMSE&quot;, &quot;Shapiro Test&quot;, &quot;BP Test&quot;)
+column_names = c(&quot; &quot;, &quot;Model&quot;)
+diagnostics = c(summary(aic_model_final)$adj,get_loocv_rmse(aic_model_final),
+                (shapiro.test(resid(aic_model_final))$p.value),
+                bptest(aic_model_final)$p.value)
+df_results = data.frame(row_names, diagnostics)
+kable(df_results, &quot;simple&quot;, col.names = column_names)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">Model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Adjusted R</td>
+<td align="right">0.8417</td>
+</tr>
+<tr class="even">
+<td>LOOCV-RMSE</td>
+<td align="right">0.1471</td>
+</tr>
+<tr class="odd">
+<td>Shapiro Test</td>
+<td align="right">0.0000</td>
+</tr>
+<tr class="even">
+<td>BP Test</td>
+<td align="right">0.0000</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="section-1" class="section level63">
 <p class="heading"></p>
 <ol start="4" style="list-style-type: decimal">
 <li>Testing model using test / train</li>
 </ol>
-<pre class="r"><code>set.seed(22)
+<pre class="r"><code>#Importing library 
+library(caret)
 
 #Split the data 70-30 train and test set
 #trn_idx = sample(1:nrow(salaries), 1608)
+set.seed(22)
 trn_idx = createDataPartition(salaries$level, p = 0.7, list = F)
 trn = salaries[trn_idx, ]
 tst = salaries[-trn_idx, ]
@@ -621,12 +629,12 @@ percent_error = mean((abs(pred_salary - actual_salary) / pred_salary)) * 100</co
 <ol start="5" style="list-style-type: decimal">
 <li>Model simulation</li>
 </ol>
-<pre class="r"><code>#Simulation
+<pre class="r"><code>#Simulation Set-Up
 num_sims = 1000
 rmse_trn = rep(0, num_sims)
 rmse_tst = rep(0, num_sims)
 
-#Implementing helper functions.
+#RMSE Function - ... 
 rmse = function(y, y_hat){
   sqrt(sum((y - y_hat) ^ 2) / length(y))
 }
@@ -640,9 +648,9 @@ for(i in 1:num_sims){
 
 #Can use r markdown to compare the two numbers and show its significance 
 mean(rmse_trn)</code></pre>
-<pre><code>## [1] 61678.49</code></pre>
+<pre><code>## [1] 61678</code></pre>
 <pre class="r"><code>mean(rmse_tst)</code></pre>
-<pre><code>## [1] 53941.73</code></pre>
+<pre><code>## [1] 53942</code></pre>
 <ol start="5" style="list-style-type: decimal">
 <li>Using Model (Name of model we select here) to make
 <code>totalyearlycompensation</code> predictions</li>
@@ -697,6 +705,37 @@ abline(0, 1, col = &quot;dodgerblue&quot;)</code></pre>
 </div>
 <div id="appendix" class="section level3">
 <h3><u>Appendix</u></h3>
+<pre class="r"><code>#HERE FOR NOW BUT WILL BE CLEANED UP
+salaries = read_csv(&quot;Levels-Fyi-Salary-Data-Cleaned-US.csv&quot;)</code></pre>
+<pre><code>## Rows: 10846 Columns: 29
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (10): timestamp, company, level, title, location, tag, gender, otherdeta...
+## dbl (19): totalyearlycompensation, yearsofexperience, yearsatcompany, basesa...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>#Remove NA records
+salaries = na.omit(salaries)
+
+#Create new column &#39;State&#39; which converts location to just the state abbreviation
+salaries$state = str_sub(salaries$location,-2,-1)
+
+#Changing some predictors to factors
+salaries$company = as.factor(salaries$company)
+salaries$level = as.factor(salaries$level)
+salaries$title = as.factor(salaries$title)
+salaries$location = as.factor(salaries$location)
+salaries$state = as.factor(salaries$state)
+salaries$gender = as.factor(salaries$gender)
+salaries$Race = as.factor(salaries$Race)
+salaries$Education = as.factor(salaries$Education)
+
+#Variable Selection: Removed variables that contain redundant information or lack of information 
+salaries = subset(salaries, select = c(company, level, title,
+                                       totalyearlycompensation,
+                                       yearsofexperience, yearsatcompany, tag,
+                                       gender, Race, state, Education))</code></pre>
 <p>Linear Model that includes all predictors</p>
 <pre class="r"><code>salaries_model = lm(totalyearlycompensation ~ ., data = salaries)</code></pre>
 <p>AIC/BIC Models</p>
@@ -776,13 +815,13 @@ abline(h=0)</code></pre>
 ##  Shapiro-Wilk normality test
 ## 
 ## data:  resid(salaries_model_fix)
-## W = 0.97998, p-value &lt; 2.2e-16</code></pre>
+## W = 0.98, p-value &lt;2e-16</code></pre>
 <pre class="r"><code>bptest(salaries_model_fix)</code></pre>
 <pre><code>## 
 ##  studentized Breusch-Pagan test
 ## 
 ## data:  salaries_model_fix
-## BP = 257.5, df = 218, p-value = 0.03442</code></pre>
+## BP = 257, df = 218, p-value = 0.03</code></pre>
 <pre class="r"><code>#anova(salaries_model_add, salaries_model_two_int)
 
 #anova(salaries_model_two_int, salaries_model_three_int)</code></pre>
@@ -892,16 +931,16 @@ get_loocv_rmse = function(model){
 #aic_model = step(start_model, direction = &quot;backward&quot;, trace = 0)
 #Check for collinearity
 car::vif(salaries_model_both_aic) #Nothing too bad, perhaps level is high</code></pre>
-<pre><code>##                       GVIF Df GVIF^(1/(2*Df))
-## level             5.075662  8        1.106862
-## company           2.187493  1        1.479018
-## title             3.433374 14        1.045040
-## yearsofexperience 2.563486  1        1.601089
-## state             3.308836 33        1.018296
-## gender            1.218811  2        1.050713
-## Race              1.458571  4        1.048313
-## Education         1.566455  4        1.057705
-## yearsatcompany    1.509887  1        1.228775</code></pre>
+<pre><code>##                    GVIF Df GVIF^(1/(2*Df))
+## level             5.076  8           1.107
+## company           2.187  1           1.479
+## title             3.433 14           1.045
+## yearsofexperience 2.563  1           1.601
+## state             3.309 33           1.018
+## gender            1.219  2           1.051
+## Race              1.459  4           1.048
+## Education         1.566  4           1.058
+## yearsatcompany    1.510  1           1.229</code></pre>
 <pre class="r"><code>#Transform log response and add interactions to predictors to improve normality, linearity, constant variance, adjusted R-squared, and loocv-RMSE
 aic_model_trans_2 = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries)
 
@@ -914,29 +953,29 @@ anova(aic_model_trans, aic_model_trans_2)</code></pre>
 ##     title)^2 + gender + Race + Education + level
 ## Model 2: log(totalyearlycompensation) ~ (company + yearsofexperience + 
 ##     title)^2 + level + gender + Race + Education
-##   Res.Df    RSS Df   Sum of Sq F Pr(&gt;F)
-## 1   3152 98.216                        
-## 2   3152 98.216  0 -2.8422e-14</code></pre>
+##   Res.Df  RSS Df Sum of Sq F Pr(&gt;F)
+## 1   3152 98.2                      
+## 2   3152 98.2  0 -2.84e-14</code></pre>
 <pre class="r"><code>#Remove influential data from the model
 aic_model_fix = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + gender + Race + Education + level, data = salaries, subset = cooks.distance(aic_model_trans) &lt; 4 / length(cooks.distance(aic_model_trans)))
 
 #Run diagnostics
 summary(aic_model_fix)$adj </code></pre>
-<pre><code>## [1] 0.841717</code></pre>
+<pre><code>## [1] 0.8417</code></pre>
 <pre class="r"><code>get_loocv_rmse(aic_model_fix)</code></pre>
-<pre><code>## [1] 0.1470639</code></pre>
+<pre><code>## [1] 0.1471</code></pre>
 <pre class="r"><code>shapiro.test(resid(aic_model_fix))</code></pre>
 <pre><code>## 
 ##  Shapiro-Wilk normality test
 ## 
 ## data:  resid(aic_model_fix)
-## W = 0.99373, p-value = 4.805e-10</code></pre>
+## W = 0.99, p-value = 5e-10</code></pre>
 <pre class="r"><code>bptest(aic_model_fix)</code></pre>
 <pre><code>## 
 ##  studentized Breusch-Pagan test
 ## 
 ## data:  aic_model_fix
-## BP = 124.51, df = 62, p-value = 4.358e-06</code></pre>
+## BP = 125, df = 62, p-value = 4e-06</code></pre>
 <pre class="r"><code>#Plot diagnostics
 par(mfrow = c(1, 2))
 
