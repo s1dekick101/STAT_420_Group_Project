@@ -23,7 +23,20 @@ The primary goal of creating a model with this data is to predict the `totalyear
 
 ### <u>Methods</u>
 
--- We choose the following model... `(PLACE HOLDER)`
+#### Description of the original data file
+- company: The company the employee works for
+- level: The rank of the employee
+- title: The job title of the employee
+- totalyearlycompensation: The total yearly compensation of the employee
+- yearsofexperience: The total years of experience of the employee
+- yearsatcompany: The years at the company of the employee
+- tag: A tag for additional information
+- gender: The gender of the employee
+- Race: The race of the employee
+- Education: The education level of the employee
+- state: The state of the work location
+
+#### Description of Additional Data Preparation Performed
 
 ```{r message=FALSE, warning=FALSE}
 #Loading dataset
@@ -63,6 +76,116 @@ salaries = subset(salaries, select = c(company, level, title,
 
 #salaries = subset(salaries, salaries$totalyearlycompensation < 1000000) #testing out removing salaries over 1mil (6 records)
 ```
+
+#### Description of the Process We Chose to Follow
+
+1. Selection of Predictors Using AIC/BIC Models
+
+
+```{r}
+salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
+#Didnt use p but n was used for model BIC models  
+#p = length(coef(salaries_model))
+n = length(resid(salaries_model))
+
+#Backward AIC
+salaries_model_back_aic = step(salaries_model,
+                               direction = "backward", trace = 0)
+
+#Backward BIC
+salaries_model_back_bic = step(salaries_model, direction = "backward",
+                               k = log(n), trace = 0)
+
+salaries_model_start = lm(totalyearlycompensation ~ 1, data = salaries)
+
+#Forward AIC
+salaries_model_forw_aic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "forward", trace = 0)
+
+#Forward BIC
+salaries_model_forw_bic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "forward", k = log(n), trace = 0)
+
+#Stepwise AIC
+salaries_model_both_aic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "both", trace = 0)
+
+#Stepwise BIC
+salaries_model_both_bic = step(salaries_model_start, 
+                               scope = totalyearlycompensation ~ company + level +
+                               title + yearsofexperience + yearsatcompany + tag +
+                               gender + Race + Education + state,
+                               direction = "both", k = log(n), trace = 0)
+```
+
+-- Using AIC searching methods we derive the same model that use 9 of the 10 given predictors
+
+  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_aic)[-1])`</u>**
+  
+-- Using BIC searching methods we derive the same model that use 4 of the 10 given predictors
+
+  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_bic)[-1])`</u>**
+  
+  
+2. Trying Transformed Models
+
+```{r}
+# Create models with transformation and without it.
+model_no_trans = lm(totalyearlycompensation ~ level + company + title + yearsofexperience, data = salaries)
+model_res_trans = lm(log(totalyearlycompensation) ~ level + company + title + yearsofexperience, data = salaries)
+
+par(mfrow = c(1, 2))
+
+# Residuals vs Fitted values plot - model without transformation
+plot(fitted(model_no_trans), resid(model_no_trans), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+# Q-Q plot - model without transformation
+qqnorm(resid(model_no_trans), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(model_no_trans), col = "dodgerblue", lwd = 2)
+
+# Residuals vs Fitted values plot - model with transformation
+plot(fitted(model_res_trans), resid(model_res_trans), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+# Q-Q plot - model with transformation
+qqnorm(resid(model_res_trans), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(model_res_trans), col = "dodgerblue", lwd = 2)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################
+
 
 ```{r, message = FALSE, warning = FALSE}
 library(car)
@@ -263,100 +386,100 @@ bptest(salaries_model_fix)
 
 Predictor/Response Transforamtion Models
 ```{r}
-# Create a model with transformed predictors
-salaries_model_res_trans= lm(log(totalyearlycompensation) ~ yearsofexperience, data = salaries)
-summary(salaries_model_res_trans)
-
-# Plot the data
- plot(log(totalyearlycompensation) ~ yearsofexperience, data = salaries,
-      xlab = "Years of Experience",
-      ylab = "Log of Total Yearly Compensation",
-      main = "Scatter plot with fitted line for log-transformed response model")
-
-# Add the fitted line
-abline(salaries_model_res_trans, col = "red")
-
-par(mfrow = c(1, 2))
-
-# Residuals vs Fitted values plot
-plot(fitted(salaries_model_res_trans), resid(salaries_model_res_trans), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
-
-# Q-Q plot
-qqnorm(resid(salaries_model_res_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(salaries_model_res_trans), col = "dodgerblue", lwd = 2)
-
-library(lmtest)
-bptest(salaries_model_res_trans)
-shapiro.test(resid(salaries_model_res_trans))
-
-# Build a linear model with log-transformed response and predictor
-salaries_model_res_pred_trans = lm(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries)
-
-summary(salaries_model_res_pred_trans)
-
-par(mfrow = c(1, 1))
-
-# Plot the data
- plot(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries,
-      xlab = "Log of Years of Experience",
-      ylab = "Log of Total Yearly Compensation",
-      main = "Scatter plot with fitted line for log-transformed response/predict model")
-
-# Add the fitted line
-abline(salaries_model_res_pred_trans, col = "red")
-
-par(mfrow = c(1, 2))
-
-# Residuals vs Fitted values plot
-plot(fitted(salaries_model_res_pred_trans), resid(salaries_model_res_pred_trans), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
-
-# Q-Q plot
-qqnorm(resid(salaries_model_res_pred_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(salaries_model_res_pred_trans), col = "dodgerblue", lwd = 2)
-
-library(lmtest)
-bptest(salaries_model_res_pred_trans)
-shapiro.test(resid(salaries_model_res_pred_trans))
-
-
-# Create a model with transformed predictors
-salaries_model_pred_trans = lm(totalyearlycompensation ~ yearsofexperience + I(yearsofexperience^2), data = salaries)
-
-# Summarize the model
-summary(salaries_model_pred_trans)
-
-par(mfrow = c(1, 1))
-
-# Plot the data
-plot(totalyearlycompensation ~ yearsofexperience, data = salaries,
-     xlab = "Years of Experience",
-     ylab = "Total Yearly Compensation",
-     main = "Scatter plot with polynomial fit")
-
-# Add the polynomial fit
-years = seq(min(salaries$yearsofexperience), max(salaries$yearsofexperience), length.out = 100)
-predicted_compensation = predict(salaries_model_pred_trans, newdata = data.frame(yearsofexperience = years))
-
-lines(years, predicted_compensation, col = "red", lwd = 2)
-
-par(mfrow = c(1, 2))
-
-# Residuals vs Fitted values plot
-plot(fitted(salaries_model_pred_trans), resid(salaries_model_pred_trans), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
-
-# Q-Q plot
-qqnorm(resid(salaries_model_pred_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(salaries_model_pred_trans), col = "dodgerblue", lwd = 2)
-
-library(lmtest)
-bptest(salaries_model_pred_trans)
-shapiro.test(resid(salaries_model_pred_trans))
+# # Create a model with transformed predictors
+# model_res_trans= lm(log(totalyearlycompensation) ~ yearsofexperience, data = salaries)
+# summary(model_res_trans)
+# 
+# # Plot the data
+#  plot(log(totalyearlycompensation) ~ yearsofexperience, data = salaries,
+#       xlab = "Years of Experience",
+#       ylab = "Log of Total Yearly Compensation",
+#       main = "Scatter plot with fitted line for log-transformed response model")
+# 
+# # Add the fitted line
+# abline(model_res_trans, col = "red")
+# 
+# par(mfrow = c(1, 2))
+# 
+# # Residuals vs Fitted values plot
+# plot(fitted(model_res_trans), resid(model_res_trans), col = "grey", pch = 20,
+#      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+# abline(h = 0, col = "darkorange", lwd = 2)
+# 
+# # Q-Q plot
+# qqnorm(resid(model_res_trans), main = "Normal Q-Q Plot", col = "darkgrey")
+# qqline(resid(model_res_trans), col = "dodgerblue", lwd = 2)
+# 
+# library(lmtest)
+# bptest(model_res_trans)
+# shapiro.test(resid(model_res_trans))
+# 
+# # Build a linear model with log-transformed response and predictor
+# salaries_model_res_pred_trans = lm(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries)
+# 
+# summary(salaries_model_res_pred_trans)
+# 
+# par(mfrow = c(1, 1))
+# 
+# # Plot the data
+#  plot(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries,
+#       xlab = "Log of Years of Experience",
+#       ylab = "Log of Total Yearly Compensation",
+#       main = "Scatter plot with fitted line for log-transformed response/predict model")
+# 
+# # Add the fitted line
+# abline(salaries_model_res_pred_trans, col = "red")
+# 
+# par(mfrow = c(1, 2))
+# 
+# # Residuals vs Fitted values plot
+# plot(fitted(salaries_model_res_pred_trans), resid(salaries_model_res_pred_trans), col = "grey", pch = 20,
+#      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+# abline(h = 0, col = "darkorange", lwd = 2)
+# 
+# # Q-Q plot
+# qqnorm(resid(salaries_model_res_pred_trans), main = "Normal Q-Q Plot", col = "darkgrey")
+# qqline(resid(salaries_model_res_pred_trans), col = "dodgerblue", lwd = 2)
+# 
+# library(lmtest)
+# bptest(salaries_model_res_pred_trans)
+# shapiro.test(resid(salaries_model_res_pred_trans))
+# 
+# 
+# # Create a model with transformed predictors
+# salaries_model_pred_trans = lm(totalyearlycompensation ~ yearsofexperience + I(yearsofexperience^2), data = salaries)
+# 
+# # Summarize the model
+# summary(salaries_model_pred_trans)
+# 
+# par(mfrow = c(1, 1))
+# 
+# # Plot the data
+# plot(totalyearlycompensation ~ yearsofexperience, data = salaries,
+#      xlab = "Years of Experience",
+#      ylab = "Total Yearly Compensation",
+#      main = "Scatter plot with polynomial fit")
+# 
+# # Add the polynomial fit
+# years = seq(min(salaries$yearsofexperience), max(salaries$yearsofexperience), length.out = 100)
+# predicted_compensation = predict(salaries_model_pred_trans, newdata = data.frame(yearsofexperience = years))
+# 
+# lines(years, predicted_compensation, col = "red", lwd = 2)
+# 
+# par(mfrow = c(1, 2))
+# 
+# # Residuals vs Fitted values plot
+# plot(fitted(salaries_model_pred_trans), resid(salaries_model_pred_trans), col = "grey", pch = 20,
+#      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+# abline(h = 0, col = "darkorange", lwd = 2)
+# 
+# # Q-Q plot
+# qqnorm(resid(salaries_model_pred_trans), main = "Normal Q-Q Plot", col = "darkgrey")
+# qqline(resid(salaries_model_pred_trans), col = "dodgerblue", lwd = 2)
+# 
+# library(lmtest)
+# bptest(salaries_model_pred_trans)
+# shapiro.test(resid(salaries_model_pred_trans))
 
 ```
 
