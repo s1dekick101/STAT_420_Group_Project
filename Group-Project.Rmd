@@ -36,13 +36,14 @@ The primary goal of creating a model with this data is to predict the `totalyear
 - Education: The education level of the employee
 - state: The state of the work location
 
-#### Description of Additional Data Preparation Performed
+#### Data Pre-Processing 
 
 ```{r message=FALSE, warning=FALSE}
-#Loading dataset
+#Loading dataset and importing libraries 
 library(readr)
 library(stringr)
 salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
+View(salaries)
 
 #Remove NA records
 salaries = na.omit(salaries)
@@ -77,16 +78,13 @@ salaries = subset(salaries, select = c(company, level, title,
 #salaries = subset(salaries, salaries$totalyearlycompensation < 1000000) #testing out removing salaries over 1mil (6 records)
 ```
 
-#### Description of the Process We Chose to Follow
+#### Model Selection Proccess 
 
-1. Selection of Predictors Using AIC/BIC Models
-
+1. Selection of Predictors Using AIC/BIC Methodology 
 
 ```{r}
+#Model that has 'totalyearlycompensation' as the response variable and all remaining variables serve as the predictors
 salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
-#Didnt use p but n was used for model BIC models  
-#p = length(coef(salaries_model))
-n = length(resid(salaries_model))
 
 #Backward AIC
 salaries_model_back_aic = step(salaries_model,
@@ -94,7 +92,7 @@ salaries_model_back_aic = step(salaries_model,
 
 #Backward BIC
 salaries_model_back_bic = step(salaries_model, direction = "backward",
-                               k = log(n), trace = 0)
+                               k = log(nrow(salaries)), trace = 0)
 
 salaries_model_start = lm(totalyearlycompensation ~ 1, data = salaries)
 
@@ -110,7 +108,7 @@ salaries_model_forw_bic = step(salaries_model_start,
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
                                gender + Race + Education + state,
-                               direction = "forward", k = log(n), trace = 0)
+                               direction = "forward", k = log(nrow(salaries)), trace = 0)
 
 #Stepwise AIC
 salaries_model_both_aic = step(salaries_model_start, 
@@ -124,27 +122,25 @@ salaries_model_both_bic = step(salaries_model_start,
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
                                gender + Race + Education + state,
-                               direction = "both", k = log(n), trace = 0)
+                               direction = "both", k = log(nrow(salaries)), trace = 0)
 ```
 
--- Using AIC searching methods we derive the same model that use 9 of the 10 given predictors
+-- Using AIC searching methods, we derive the same model that use 9 of the 10 given predictors
 
   AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_aic)[-1])`</u>**
   
--- Using BIC searching methods we derive the same model that use 4 of the 10 given predictors
+-- Using BIC searching methods, we derive the same model that use 4 of the 10 given predictors
 
   AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_bic)[-1])`</u>**
   
   
-2. Trying Transformed Models
+2. Performing Model Transforms
 
 ```{r}
-# Create models with transformation and without it.
+#Model without transformations 
 model_no_trans = lm(totalyearlycompensation ~ level + company + title + yearsofexperience, data = salaries)
-model_res_trans = lm(log(totalyearlycompensation) ~ level + company + title + yearsofexperience, data = salaries)
 
 par(mfrow = c(1, 2))
-
 # Residuals vs Fitted values plot - model without transformation
 plot(fitted(model_no_trans), resid(model_no_trans), col = "grey", pch = 20,
      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
@@ -154,6 +150,11 @@ abline(h = 0, col = "darkorange", lwd = 2)
 qqnorm(resid(model_no_trans), main = "Normal Q-Q Plot", col = "darkgrey")
 qqline(resid(model_no_trans), col = "dodgerblue", lwd = 2)
 
+
+#Model with transformations 
+model_res_trans = lm(log(totalyearlycompensation) ~ level + company + title + yearsofexperience, data = salaries)
+
+par(mfrow = c(1, 2))
 # Residuals vs Fitted values plot - model with transformation
 plot(fitted(model_res_trans), resid(model_res_trans), col = "grey", pch = 20,
      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
@@ -162,7 +163,6 @@ abline(h = 0, col = "darkorange", lwd = 2)
 # Q-Q plot - model with transformation
 qqnorm(resid(model_res_trans), main = "Normal Q-Q Plot", col = "darkgrey")
 qqline(resid(model_res_trans), col = "dodgerblue", lwd = 2)
-
 ```
 
 
@@ -186,14 +186,18 @@ qqline(resid(model_res_trans), col = "dodgerblue", lwd = 2)
 
 ###############################################################
 
+3. Testing model using test / train 
 
 ```{r, message = FALSE, warning = FALSE}
+set.seed(22)
+
+#Importing libraries and implementing helper functions 
 library(car)
 library(lmtest)
 library(boot)
 library(caret)
-set.seed(22)
 
+#Provide brief description of what this function does 
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
@@ -252,6 +256,11 @@ plot(pred_salary, actual_salary,
      ylim = c(0, max_salary)
      )
 abline(0, 1, col = "dodgerblue")
+```
+
+4. Model simulation  
+
+```{r, message = FALSE, warning = FALSE}
 
 #Simulation
 num_sims = 1000
@@ -269,8 +278,15 @@ for(i in 1:num_sims){
   rmse_tst[i] = rmse(tst$totalyearlycompensation, exp(predict(sim_fit, tst)))
 }
 
+#Can use r markdown to compare the two numbers and show its significance 
 mean(rmse_trn)
 mean(rmse_tst)
+```
+
+5. Using Model (Name of model we select here) to make `totalyearlycompensation` predictions 
+
+```{r, message = FALSE, warning = FALSE}
+
 
 #Predict salaries
 #salary_1 = data.frame(company = "Amazon", level = "L4", title = "Software Engineer", #yearsofexperience = 0, gender = "Female", Race = "Asian", Education = "Master's Degree") #150000
