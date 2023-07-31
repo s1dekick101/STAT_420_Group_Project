@@ -39,11 +39,11 @@ The primary goal of creating a model with this data is to predict the `totalyear
 #### Data Pre-Processing 
 
 ```{r message=FALSE, warning=FALSE}
-#Loading dataset and importing libraries 
+#Loading dataset and importing libraries
 library(readr)
 library(stringr)
 salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
-View(salaries)
+head(salaries)
 
 #Remove NA records
 salaries = na.omit(salaries)
@@ -80,7 +80,7 @@ salaries = subset(salaries, select = c(company, level, title,
 
 #### Model Selection Proccess 
 
-1. Selection of Predictors Using AIC/BIC Methodology 
+1. Selection of Predictors Using AIC/BIC Methodology
 
 ```{r}
 #Model that has 'totalyearlycompensation' as the response variable and all remaining variables serve as the predictors
@@ -94,110 +94,76 @@ salaries_model_back_aic = step(salaries_model,
 salaries_model_back_bic = step(salaries_model, direction = "backward",
                                k = log(nrow(salaries)), trace = 0)
 
-salaries_model_start = lm(totalyearlycompensation ~ 1, data = salaries)
-
-#Forward AIC
-salaries_model_forw_aic = step(salaries_model_start, 
-                               scope = totalyearlycompensation ~ company + level +
-                               title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
-                               direction = "forward", trace = 0)
-
-#Forward BIC
-salaries_model_forw_bic = step(salaries_model_start, 
-                               scope = totalyearlycompensation ~ company + level +
-                               title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
-                               direction = "forward", k = log(nrow(salaries)), trace = 0)
-
-#Stepwise AIC
-salaries_model_both_aic = step(salaries_model_start, 
-                               scope = totalyearlycompensation ~ company + level +
-                               title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
-                               direction = "both", trace = 0)
-
-#Stepwise BIC
-salaries_model_both_bic = step(salaries_model_start, 
-                               scope = totalyearlycompensation ~ company + level +
-                               title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
-                               direction = "both", k = log(nrow(salaries)), trace = 0)
 ```
 
--- Using AIC searching methods, we derive the same model that use 9 of the 10 given predictors
-
-  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_aic)[-1])`</u>**
+Please see Appendix for forward and stepwise procedures.
   
--- Using BIC searching methods, we derive the same model that use 4 of the 10 given predictors
 
-  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_bic)[-1])`</u>**
-  
+```{r}
+anova(salaries_model_back_bic, salaries_model_back_aic)
+```
+
+The larger AIC model is preferred.
+
+```{r}
+#Check for collinearity
+car::vif(salaries_model_back_aic) #Nothing too bad
+```
+
   
 2. Performing Model Transforms
 
 ```{r}
-#Model without transformations 
-model_no_trans = lm(totalyearlycompensation ~ level + company + title + yearsofexperience, data = salaries)
+#Transform log response to improve linearity
+aic_model_log = lm(log(totalyearlycompensation) ~ company + yearsofexperience + title + level + gender + Race + Education, data = salaries)
 
-par(mfrow = c(1, 2))
-# Residuals vs Fitted values plot - model without transformation
-plot(fitted(model_no_trans), resid(model_no_trans), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
+#Add interactions to predictors to improve normality, linearity and constant variance
+aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries)
 
-# Q-Q plot - model without transformation
-qqnorm(resid(model_no_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(model_no_trans), col = "dodgerblue", lwd = 2)
+anova(aic_model_log, aic_model_trans)
 
+#Remove influential data from the model
+aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
 
-#Model with transformations 
-model_res_trans = lm(log(totalyearlycompensation) ~ level + company + title + yearsofexperience, data = salaries)
-
-par(mfrow = c(1, 2))
-# Residuals vs Fitted values plot - model with transformation
-plot(fitted(model_res_trans), resid(model_res_trans), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
-
-# Q-Q plot - model with transformation
-qqnorm(resid(model_res_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(model_res_trans), col = "dodgerblue", lwd = 2)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ###############################################################
 
-3. Testing model using test / train 
+3. Run Diagnostics
 
-```{r, message = FALSE, warning = FALSE}
-set.seed(22)
-
-#Importing libraries and implementing helper functions 
+```{r}
+#Importing libraries
 library(car)
 library(lmtest)
 library(boot)
 library(caret)
 
-#Provide brief description of what this function does 
+#Run diagnostics
+summary(aic_model_final)$adj 
+#get_loocv_rmse(aic_model_final)
+shapiro.test(resid(aic_model_final))
+bptest(aic_model_final)
+
+#Plot diagnostics
+par(mfrow = c(1, 2))
+
+# Residuals vs Fitted values plot
+plot(fitted(aic_model_final), resid(aic_model_final), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+# Q-Q plot
+qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
+```
+
+###############################################################
+
+4. Testing model using test / train 
+
+```{r, message = FALSE, warning = FALSE}
+set.seed(22)
+
+#Implementing helper functions. Provide brief description of what this function does 
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
@@ -208,42 +174,9 @@ trn_idx = createDataPartition(salaries$level, p = 0.7, list = F)
 trn = salaries[trn_idx, ]
 tst = salaries[-trn_idx, ]
 
-#Start with additive model with all predictors. Log response to improve normality
-salaries_model = lm(log(totalyearlycompensation) ~ ., data = trn)
-
-#Perform backwards AIC to select significant predictors
-salaries_model_back_aic = step(salaries_model, direction = "backward", trace = 0)
-
-#Check for collinearity
-car::vif(salaries_model_back_aic) #Nothing too bad
-
-#Transform log response and add interactions to predictors to improve normality, linearity, constant variance, adjusted R-squared, and loocv-RMSE
-aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = trn)
-
-#Remove influential data from the model
-aic_model_fix = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = trn, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
-
-#Run diagnostics
-summary(aic_model_fix)$adj 
-#get_loocv_rmse(aic_model_fix)
-shapiro.test(resid(aic_model_fix))
-bptest(aic_model_fix)
-
-#Plot diagnostics
-par(mfrow = c(1, 2))
-
-# Residuals vs Fitted values plot
-plot(fitted(aic_model_fix), resid(aic_model_fix), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
-
-# Q-Q plot
-qqnorm(resid(aic_model_fix), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(aic_model_fix), col = "dodgerblue", lwd = 2)
-
 #Plotting percent error
 actual_salary = tst$totalyearlycompensation
-pred_salary = exp(predict(aic_model_fix, tst))
+pred_salary = exp(predict(aic_model_final, tst))
 max_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary), max(pred_salary))
 percent_error = mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
 
@@ -258,7 +191,7 @@ plot(pred_salary, actual_salary,
 abline(0, 1, col = "dodgerblue")
 ```
 
-4. Model simulation  
+5. Model simulation  
 
 ```{r, message = FALSE, warning = FALSE}
 
@@ -267,6 +200,7 @@ num_sims = 1000
 rmse_trn = rep(0, num_sims)
 rmse_tst = rep(0, num_sims)
 
+#Implementing helper functions.
 rmse = function(y, y_hat){
   sqrt(sum((y - y_hat) ^ 2) / length(y))
 }
@@ -283,10 +217,9 @@ mean(rmse_trn)
 mean(rmse_tst)
 ```
 
-5. Using Model (Name of model we select here) to make `totalyearlycompensation` predictions 
+6. Using Model (Name of model we select here) to make `totalyearlycompensation` predictions 
 
 ```{r, message = FALSE, warning = FALSE}
-
 
 #Predict salaries
 #salary_1 = data.frame(company = "Amazon", level = "L4", title = "Software Engineer", #yearsofexperience = 0, gender = "Female", Race = "Asian", Education = "Master's Degree") #150000
