@@ -62,9 +62,76 @@ salaries = subset(salaries, select = c(company, level, title,
                                        gender, Race, Education, state))
 ```
 
-```{r}
-# Placeholder and we will just put the model we actually use here 
-model = 2
+```{r, message = FALSE, warning = FALSE}
+library(car)
+library(lmtest)
+library(boot)
+set.seed(22)
+
+get_loocv_rmse = function(model){
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
+trn_idx = sample(1:nrow(salaries), 1608)
+trn = salaries[trn_idx, ]
+tst = salaries[-trn_idx, ]
+
+salaries_model = lm(totalyearlycompensation ~ ., data = trn)
+salaries_model_back_aic = step(salaries_model, direction = "backward", trace = 0)
+
+#Check for collinearity
+car::vif(salaries_model_back_aic) #Nothing too bad, perhaps level is high
+
+#Transform log response and add interactions to predictors to improve normality, linearity, constant variance, adjusted R-squared, and loocv-RMSE
+aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience) ^ 2 + title + gender + Race + Education + level, data = trn)
+
+#Remove influential data from the model
+aic_model_fix = lm(log(totalyearlycompensation) ~ (company + yearsofexperience) ^ 2 + title + gender + Race + Education + level, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
+
+#Run diagnostics
+summary(aic_model_fix)$adj 
+get_loocv_rmse(aic_model_fix)
+shapiro.test(resid(aic_model_fix))
+bptest(aic_model_fix)
+
+#Plot diagnostics
+par(mfrow = c(1, 2))
+
+# Residuals vs Fitted values plot
+plot(fitted(aic_model_fix), resid(aic_model_fix), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+# Q-Q plot
+qqnorm(resid(aic_model_fix), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(aic_model_fix), col = "dodgerblue", lwd = 2)
+
+#Simulation
+num_sims = 1000
+rmse_trn = rep(0, num_sims)
+rmse_tst = rep(0, num_sims)
+
+rmse = function(y, y_hat){
+  sqrt(sum((y - y_hat) ^ 2) / length(y))
+}
+
+for(i in 1:num_sims){
+  sim_fit = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + gender + Race + Education + level, data = trn)
+  
+  rmse_trn[i] = rmse(trn$totalyearlycompensation, exp(predict(sim_fit, trn)))
+  rmse_tst[i] = rmse(tst$totalyearlycompensation, exp(predict(sim_fit, tst)))
+}
+
+mean(rmse_trn)
+mean(rmse_tst)
+
+salary_1 = data.frame(company = "Amazon", level = "L4", title = "Software Engineer", yearsofexperience = 0, gender = "Female", Race = "Asian", Education = "Master's Degree") #150000
+salary_2 = data.frame(company = "Amazon", level = "L4", title = "Software Engineer", yearsofexperience = 2, gender = "Male", Race = "Hispanic", Education = "Bachelor's Degree") #152000
+salary_3 = data.frame(company = "Google", level = "L5", title = "Software Engineer", yearsofexperience = 9, gender = "Male", Race = "Asian", Education = "PhD") #396000
+
+exp(predict(aic_model_fix, newdata = salary_1))
+exp(predict(aic_model_fix, newdata = salary_2))
+exp(predict(aic_model_fix, newdata = salary_3))
 ```
 
 
@@ -276,15 +343,20 @@ library(lmtest)
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
-
+#start_model = lm(log(totalyearlycompensation) ~ . ^ 2, data = salaries)
+#aic_model = step(start_model, direction = "backward", trace = 0)
 #Check for collinearity
 car::vif(salaries_model_both_aic) #Nothing too bad, perhaps level is high
 
 #Transform log response and add interactions to predictors to improve normality, linearity, constant variance, adjusted R-squared, and loocv-RMSE
-aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries)
+aic_model_trans_2 = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries)
+
+aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + gender + Race + Education + level, data = salaries)
+
+anova(aic_model_trans, aic_model_trans_2)
 
 #Remove influential data from the model
-aic_model_fix = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
+aic_model_fix = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + gender + Race + Education + level, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
 
 #Run diagnostics
 summary(aic_model_fix)$adj 
