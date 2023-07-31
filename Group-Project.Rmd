@@ -111,7 +111,7 @@ car::vif(salaries_model_back_aic) #Nothing too bad
 ```
 
   
-2. Performing Model Transforms
+2. Performing Model Transformations
 
 ```{r}
 #Transform log response to improve linearity
@@ -137,23 +137,17 @@ library(lmtest)
 library(boot)
 library(caret)
 
+#Implementing helper functions. Provide brief description of what this function does 
+get_loocv_rmse = function(model){
+  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
+}
+
 #Run diagnostics
 summary(aic_model_final)$adj 
 #get_loocv_rmse(aic_model_final)
 shapiro.test(resid(aic_model_final))
 bptest(aic_model_final)
 
-#Plot diagnostics
-par(mfrow = c(1, 2))
-
-# Residuals vs Fitted values plot
-plot(fitted(aic_model_final), resid(aic_model_final), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
-
-# Q-Q plot
-qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ```
 
 ###############################################################
@@ -163,32 +157,18 @@ qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ```{r, message = FALSE, warning = FALSE}
 set.seed(22)
 
-#Implementing helper functions. Provide brief description of what this function does 
-get_loocv_rmse = function(model){
-  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
-}
-
 #Split the data 70-30 train and test set
 #trn_idx = sample(1:nrow(salaries), 1608)
 trn_idx = createDataPartition(salaries$level, p = 0.7, list = F)
 trn = salaries[trn_idx, ]
 tst = salaries[-trn_idx, ]
 
-#Plotting percent error
+#Calculating average percent error
 actual_salary = tst$totalyearlycompensation
 pred_salary = exp(predict(aic_model_final, tst))
 max_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary), max(pred_salary))
 percent_error = mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
 
-plot(pred_salary, actual_salary,
-     col = "darkgrey",
-     xlab = "Predicted Salaries Prices",
-     ylab = "Actual Salaries",
-     main = "Predicted vs. Actual Salaries",
-     xlim = c(0, max_salary),
-     ylim = c(0, max_salary)
-     )
-abline(0, 1, col = "dodgerblue")
 ```
 
 5. Model simulation  
@@ -217,7 +197,7 @@ mean(rmse_trn)
 mean(rmse_tst)
 ```
 
-6. Using Model (Name of model we select here) to make `totalyearlycompensation` predictions 
+5. Using Model (Name of model we select here) to make `totalyearlycompensation` predictions 
 
 ```{r, message = FALSE, warning = FALSE}
 
@@ -228,14 +208,49 @@ mean(rmse_tst)
 
 #salary_3 = data.frame(company = "Google", level = "L5", title = "Software Engineer", #yearsofexperience = 9, gender = "Male", Race = "Asian", Education = "PhD") #396000
 
-#exp(predict(aic_model_fix, newdata = salary_1))
-#exp(predict(aic_model_fix, newdata = salary_2))
-#exp(predict(aic_model_fix, newdata = salary_3))
+#exp(predict(aic_model_final, newdata = salary_1))
+#exp(predict(aic_model_final, newdata = salary_2))
+#exp(predict(aic_model_final, newdata = salary_3))
 ```
 ***
 
 ### <u>Results</u>
 
+Diagnostics
+```{r}
+#Plot diagnostics
+par(mfrow = c(1, 2))
+
+# Residuals vs Fitted values plot
+plot(fitted(aic_model_final), resid(aic_model_final), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+# Q-Q plot
+qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot", col = "darkgrey")
+qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
+
+#Insert table with other diagnostics, r.squared etc. 
+```
+
+Percent Error - Fitted vs. Actual Plot
+```{r}
+plot(pred_salary, actual_salary,
+     col = "darkgrey",
+     xlab = "Predicted Salaries Prices",
+     ylab = "Actual Salaries",
+     main = "Predicted vs. Actual Salaries",
+     xlim = c(0, max_salary),
+     ylim = c(0, max_salary)
+     )
+abline(0, 1, col = "dodgerblue")
+
+```
+
+Predictions?
+```{r}
+
+```
 
 ***
 
