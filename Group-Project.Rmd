@@ -338,7 +338,7 @@ for(i in 1:length(unique(salaries$Race))) {
 par(mfrow = c(1,2))
 barplot(amamzon_salaries, names.arg = race, col=rainbow(length(amamzon_salaries)), 
         main = "AMZN: L1 Salary Based on Race", ylab = "Total Compensation")
-barplot(amamzon_salaries, names.arg = race, col=rainbow(length(google_salaries)), 
+barplot(google_salaries, names.arg = race, col=rainbow(length(google_salaries)), 
         main = "GOOG: L1 Salary Based on Race", ylab = "Total Compensation")
 
 #Will be used later for the discussion on why google entry level is so high
