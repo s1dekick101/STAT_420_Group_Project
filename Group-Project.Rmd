@@ -317,6 +317,35 @@ Predictions?
 
 ```
 
+
+Practical Application of Model 
+```{r, fig.dim = c(12, 10)}
+
+#Initializing variables for predicting a persons salary based upon their race
+race = c("White", "Black", "Hispanic", "Asian", "Two Or More")
+amamzon_salaries = rep(0, length(unique(salaries$Race)))
+google_salaries = rep(0, length(unique(salaries$Race)))
+
+for(i in 1:length(unique(salaries$Race))) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree")))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree")))
+
+  amamzon_salaries[i] = sal1
+  google_salaries[i] = sal2
+}
+
+#Plot
+par(mfrow = c(1,2))
+barplot(amamzon_salaries, names.arg = race, col=rainbow(length(amamzon_salaries)), 
+        main = "AMZN: L1 Salary Based on Race", ylab = "Total Compensation")
+barplot(amamzon_salaries, names.arg = race, col=rainbow(length(google_salaries)), 
+        main = "GOOG: L1 Salary Based on Race", ylab = "Total Compensation")
+
+#Will be used later for the discussion on why google entry level is so high
+#exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
+#exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
+```
+
 ***
 
 ### <u>Discussion</u>
