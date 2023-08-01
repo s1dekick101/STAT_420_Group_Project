@@ -13,11 +13,11 @@ urlcolor: cyan
 
 As data science students, we're intrigued by the compensation structures within leading tech companies like Amazon and Google. To delve into this interest, we're undertaking a project to analyze a dataset of 12,647 salary records from these companies, with an aim to construct a predictive model for annual total compensation.
 
-This dataset, `Levels-Fyi-Salary-Data-Cleaned.csv`, provides a unique and in-depth perspective into the salary structures of numerous top-tier companies. The dataset encompasses 28 variables, covering a variety of aspects such as company, level, title, location, years of experience, years at the company, and various demographic factors including gender and education level. Of particular interest to us is the `totalyearlycompensation` variable, which will serve as the response variable in our analysis.
+This dataset, `Levels-Fyi-Salary-Data-Cleaned-US.csv`, provides a unique and in-depth perspective into the salary structures of numerous top-tier companies. The dataset encompasses 28 variables, covering a variety of aspects such as company, level, title, location, years of experience, years at the company, and various demographic factors including gender and education level. Of particular interest to us is the `totalyearlycompensation` variable, which will serve as the response variable in our analysis.
 
 Our interest in this dataset is driven by our curiosity about the factors that influence annual compensation in top companies. We aim to identify the key variables and their interactions that significantly impact salary levels. This would provide insights that could be invaluable to a variety of stakeholders, from job seekers and employees to human resource professionals and policymakers.
 
-The primary goal of creating a model with this data is to predict the `totalyearlycompensation` based on a set of predictor variables. This model will help us understand how different variables, including categorical ones like `company` and numeric ones such as `yearsofexperience` and `basesalary`, contribute to the total yearly compensation of an employee. Through this process, we also hope to identify potential trends, anomalies, or points of interest that could provide further avenues for exploration and analysis.
+The primary goal of creating a model with this data is to predict the `totalyearlycompensation` based on a set of predictor variables. This model will help us understand how different variables, including categorical ones like `level` and numeric ones such as `yearsofexperience` and `yearsatcompany`, contribute to the total yearly compensation of an employee. Through this process, we also hope to identify potential trends, anomalies, or points of interest that could provide further avenues for exploration and analysis.
 
 ***
 
@@ -27,20 +27,46 @@ The primary goal of creating a model with this data is to predict the `totalyear
 options(digits = 4)
 ```
 
+
 #### Description of the original data file
-- company: The company the employee works for
-- level: The rank of the employee
-- title: The job title of the employee
-- totalyearlycompensation: The total yearly compensation of the employee
-- yearsofexperience: The total years of experience of the employee
-- yearsatcompany: The years at the company of the employee
-- tag: A tag for additional information
-- gender: The gender of the employee
-- Race: The race of the employee
-- Education: The education level of the employee
-- state: The state of the work location
+- `timestamp`: Timestamp of data entry
+- `company`: The company the employee works for, either Amazon or Google
+- `level`: The rank of the employee, ranging from L1 through L10
+- `title`: The job title of the employee
+- `location`: The city, state that the employee resides in
+- `totalyearlycompensation`: The total yearly compensation of the employee
+- `yearsofexperience`: The total years of working experience of the employee
+- `yearsatcompany`: The years at the company of the employee
+- `tag`: A tag for additional information
+- `basesalary`: Employee's annual base salary
+- `stockgrantvalue`: Employee's annual stock grant value
+- `bonus`: Employee's annual bonus
+- `otherdetails`: Other details
+- `cityid`: City id
+- `dmaid`: Dma id
+- `rowNumber`: Row number
+- `Masters_Degree`: A dummy variable indicating employee's level of education
+- `Bachelors_Degree`: A dummy variable indicating employee's level of education
+- `Doctorate_Degree`: A dummy variable indicating employee's level of education
+- `Highschool`: A dummy variable indicating employee's level of education
+- `Some_College`: A dummy variable indicating employee's level of education
+- `Race_Asian`: A dummy variable indicating employee's race
+- `Race_White`: A dummy variable indicating employee's race
+- `Race_Two_Or_More`: A dummy variable indicating employee's race
+- `Race_Black`: A dummy variable indicating employee's race
+- `Race_Hispanic`: A dummy variable indicating employee's race
+- `gender`: The gender of the employee
+- `Race`: The race of the employee
+- `Education`: The education level of the employee
 
 #### Data Pre-Processing 
+
+First, we had to clean and prepare our data to make it fit for analysis. We removed any records with missing values, and converted all categorical variables into factors. We chose to exclude certain columns from our final data set for these reasons: 
+
+- The column was not a descriptive attribute of the employee (`timestamp`, `cityid`, `dmaid`) 
+- The column was a dummy variable with the redundant data stored in another column (`Masters_Degree`, `Bachelors_Degree`, `Doctorate_Degree`, `Highschool`, `Some_College`, `Race_Asian`, `Race_White`, `Race_Two_Or_More`, `Race_Black`, `Race_Hispanic`)
+
+Lastly, we excluded columns `basesalary`, `stockgrantvalue`, and `bonus` as we discovered that these fields were providing contradictory data. These three values are supposed to sum up to `totalyearlycompensation`; however, this was not the case the majority of the time. This is most likely due to faulty or missing user entry.
 
 ```{r message=FALSE, warning=FALSE}
 #Loading dataset and importing libraries
@@ -54,34 +80,20 @@ salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
 #Remove NA records
 salaries = na.omit(salaries)
 
-#Create new column 'State' which converts location to just the state abbreviation
-salaries$state = str_sub(salaries$location,-2,-1)
-
 #Changing some predictors to factors
 salaries$company = as.factor(salaries$company)
 salaries$level = as.factor(salaries$level)
 salaries$title = as.factor(salaries$title)
 salaries$location = as.factor(salaries$location)
-salaries$state = as.factor(salaries$state)
 salaries$gender = as.factor(salaries$gender)
 salaries$Race = as.factor(salaries$Race)
 salaries$Education = as.factor(salaries$Education)
 
-#Feel free to uncomment until we get confirmation from TA on removing columns or not
-#Variable Selection: Removed variables that contained redundant information 
-#salaries = subset(salaries, select = c(company, level, title,
-#                                       totalyearlycompensation,
-#                                       yearsofexperience, yearsatcompany, tag,
-#                                       basesalary, stockgrantvalue, bonus,
-#                                       gender, Race, Education, state))
-
 #Variable Selection: Removed variables that contain redundant information or lack of information 
 salaries = subset(salaries, select = c(company, level, title,
-                                       totalyearlycompensation,
+                                       totalyearlycompensation, location,
                                        yearsofexperience, yearsatcompany, tag,
                                        gender, Race, Education))
-
-#salaries = subset(salaries, salaries$totalyearlycompensation < 1000000) #testing out removing salaries over 1mil (6 records)
 ```
 
 #### Model Selection Proccess 
@@ -101,11 +113,11 @@ salaries_model_back_bic = step(salaries_model, direction = "backward",
                                k = log(nrow(salaries)), trace = 0)
 ```
 
--- Using the AIC searching method, we derive a model that uses 7 of the 9 given predictors
+-- Using the AIC searching method, we derive a model that uses 7 of the 10 given predictors
 
    Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_aic)[-1])`</u>**
   
--- Using the BIC searching method, we derive a model that uses 4 of the 9 given predictors
+-- Using the BIC searching method, we derive a model that uses 4 of the 10 given predictors
 
    Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_bic)[-1])`</u>**
 
@@ -246,20 +258,43 @@ mean(rmse_tst)
 
 Based on our results, we expect our model to deliver a `r 100 - percent_error`% accuracy rating.
 
-Diagnostics
-```{r}
-#Plot diagnostics
-par(mfrow = c(1, 2))
+#### Diagnostics
 
-# Residuals vs Fitted values plot
-plot(fitted(aic_model_final), resid(aic_model_final), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
+##### Q-Q Plots
+
+```{r, fig.dim = c(12, 10)}
+par(mfrow = c(1,3))
+
+# Q-Q plot of initial model without log response transformation
+qqnorm(resid(salaries_model_back_aic), main = "Normal Q-Q Plot Before Log Response", col = "darkgrey")
+qqline(resid(salaries_model_back_aic), col = "dodgerblue", lwd = 2)
+
+# Q-Q plot after log response transformation
+qqnorm(resid(aic_model_log), main = "Normal Q-Q Plot After Log Response", col = "darkgrey")
+qqline(resid(aic_model_log), col = "dodgerblue", lwd = 2)
+
+# Q-Q plot after log response transformation
+qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot After All Transformations", col = "darkgrey")
+qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
+```
+
+##### Residuals vs. Fitted Plots
+```{r, fig.dim = c(12, 10)}
+par(mfrow = c(1,2))
+
+#Residuals vs Fitted plot of initial model before transformation
+plot(fitted(salaries_model_back_aic), resid(salaries_model_back_aic), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals Before Transformations")
 abline(h = 0, col = "darkorange", lwd = 2)
 
-# Q-Q plot
-qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
+#Residuals vs Fitted plot of final model after transformations
+plot(fitted(aic_model_final), resid(aic_model_final), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals After Transformations")
+abline(h = 0, col = "darkorange", lwd = 2)
+```
 
+
+```{r}
 #Insert table with other diagnostics, r.squared etc. 
 ```
 
@@ -274,7 +309,6 @@ plot(pred_salary, actual_salary,
      ylim = c(0, max_salary)
      )
 abline(0, 1, col = "dodgerblue")
-
 ```
 
 
@@ -475,6 +509,12 @@ abline(h = 0, col = "darkorange", lwd = 2)
 # Q-Q plot
 qqnorm(resid(aic_model_fix), main = "Normal Q-Q Plot", col = "darkgrey")
 qqline(resid(aic_model_fix), col = "dodgerblue", lwd = 2)
+```
+
+Putting this in the appendix for now
+```{r}
+#Create new column 'State' which converts location to just the state abbreviation
+#salaries$state = str_sub(salaries$location,-2,-1)
 ```
 
 By: Nicholas O. Brown, Ellie Jung, Angela Mei
