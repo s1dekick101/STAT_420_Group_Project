@@ -129,7 +129,7 @@ Please see Appendix for forward and stepwise procedures.
 anova(salaries_model_back_bic, salaries_model_back_aic)
 ```
 
-Based upon the results of our test, we calculate a p-value of `r anova(salaries_model_back_bic, salaries_model_back_aic)[2, "Pr(>F)"]` meaning that we reject the BIC model and accept the larger AIC model (`salaries_model_back_aic`). 
+Based upon the results of our test, we calculate a p-value of **`r anova(salaries_model_back_bic, salaries_model_back_aic)[2, "Pr(>F)"]`** meaning that we reject the BIC model and accept the larger AIC model (`salaries_model_back_aic`). 
 
 ```{r}
 #Checking the collinearity of the AIC model 
@@ -148,7 +148,7 @@ aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience
 anova(aic_model_log, aic_model_trans)
 ```
 
-Based upon the results of our anova test, we calculated a p-value of < 2.2e-16 meaning that we reject the log model (`aic_model_log`) and would prefer the full transformation model(`aic_model_trans`). 
+Based upon the results of our anova test, we calculated a p-value of < **`r anova(aic_model_log, aic_model_trans)[2, "Pr(>F)"]`** meaning that we reject the log model (`aic_model_log`) and would prefer the full transformation model(`aic_model_trans`). 
 
 ```{r}
 #Removing influential data points from the model
@@ -157,7 +157,7 @@ aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience
 
 Cook's distance was employed to identify influential data points in the `aic_model_trans`. A threshold was set, typically at 4/`n`, where `n` is the number of observations. Observations with a Cook's distance larger than this threshold were considered influential and were removed.
 
-3. Run Diagnostics
+##### 3. Run Diagnostics
 
 ```{r message=FALSE, warning=FALSE}
 #Importing libraries
@@ -188,9 +188,8 @@ df_results = data.frame(row_names, diagnostics)
 kable(df_results, "simple", col.names = column_names)
 ```
 
-###############################################################
 
-4. Testing model using test / train 
+##### 4. Testing model using test / train 
 
 ```{r, message = FALSE, warning = FALSE}
 #Importing library 
@@ -210,7 +209,7 @@ max_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary), m
 percent_error = mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
 ```
 
-5. Model simulation  
+##### 5. Model simulation  
 
 ```{r, message = FALSE, warning = FALSE}
 
@@ -237,7 +236,7 @@ mean(rmse_tst)
 ```
 
 
-5. Model Predictions  
+##### 6. Model Predictions  
 
 ```{r, message = FALSE, warning = FALSE}
 
@@ -256,7 +255,7 @@ mean(rmse_tst)
 
 ### <u>Results</u>
 
-Based on our results, we expect our model to deliver a `r 100 - percent_error`% accuracy rating.
+Based on our results, we expect our model to deliver a **`r 100 - percent_error`%** accuracy rating.
 
 #### Diagnostics
 
@@ -273,23 +272,28 @@ qqline(resid(salaries_model_back_aic), col = "dodgerblue", lwd = 2)
 qqnorm(resid(aic_model_log), main = "Normal Q-Q Plot After Log Response", col = "darkgrey")
 qqline(resid(aic_model_log), col = "dodgerblue", lwd = 2)
 
-# Q-Q plot after log response transformation
+# Q-Q plot after all transformations
 qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot After All Transformations", col = "darkgrey")
 qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ```
 
 ##### Residuals vs. Fitted Plots
 ```{r, fig.dim = c(12, 10)}
-par(mfrow = c(1,2))
+par(mfrow = c(1,3))
 
-#Residuals vs Fitted plot of initial model before transformation
+#Residuals vs Fitted plot of initial model without log response transformation
 plot(fitted(salaries_model_back_aic), resid(salaries_model_back_aic), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals Before Transformations")
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted vs Resids Before Log Response")
 abline(h = 0, col = "darkorange", lwd = 2)
 
-#Residuals vs Fitted plot of final model after transformations
+#Residuals vs Fitted plot after log response transformation
+plot(fitted(aic_model_log), resid(aic_model_log), col = "grey", pch = 20,
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted vs Resids After Log Response")
+abline(h = 0, col = "darkorange", lwd = 2)
+
+#Residuals vs Fitted plot after all transformations
 plot(fitted(aic_model_final), resid(aic_model_final), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals After Transformations")
+     xlab = "Fitted", ylab = "Residuals", main = "Fitted vs Resids After All Transformations")
 abline(h = 0, col = "darkorange", lwd = 2)
 ```
 
