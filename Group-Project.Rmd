@@ -136,7 +136,7 @@ aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience
 anova(aic_model_log, aic_model_trans)
 ```
 
-Based upon the results of our test, we calculate a p-value of < 2.2e-16 meaning that we reject the `aic_model_log`; thus, the `aic_model_trans` model is preferred. 
+Based upon the results of our anova test, we calculated a p-value of < 2.2e-16 meaning that we reject the log model (`aic_model_log`) and would prefer the full transformation model(`aic_model_trans`). 
 
 ```{r}
 #Removing influential data points from the model
@@ -219,12 +219,13 @@ for(i in 1:num_sims){
   rmse_tst[i] = rmse(tst$totalyearlycompensation, exp(predict(sim_fit, tst)))
 }
 
-#Can use r markdown to compare the two numbers and show its significance 
+#Think we should comment this out and call this out in the results section
 mean(rmse_trn)
 mean(rmse_tst)
 ```
 
-5. Using Model (Name of model we select here) to make `totalyearlycompensation` predictions 
+
+5. Model Predictions  
 
 ```{r, message = FALSE, warning = FALSE}
 
@@ -242,6 +243,8 @@ mean(rmse_tst)
 ***
 
 ### <u>Results</u>
+
+Based on our results, we expect our model to deliver a `r 100 - percent_error`% accuracy rating.
 
 Diagnostics
 ```{r}
@@ -273,6 +276,7 @@ plot(pred_salary, actual_salary,
 abline(0, 1, col = "dodgerblue")
 
 ```
+
 
 Predictions?
 ```{r}
