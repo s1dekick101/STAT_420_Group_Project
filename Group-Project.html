@@ -11,7 +11,7 @@
 
 <meta name="author" content="The Statisticians" />
 
-<meta name="date" content="2023-07-31" />
+<meta name="date" content="2023-08-01" />
 
 <title>Data Analysis of Tech. Salaries at Amazon and Google</title>
 
@@ -365,7 +365,7 @@ display: none;
 <h1 class="title toc-ignore">Data Analysis of Tech. Salaries at Amazon
 and Google</h1>
 <h4 class="author">The Statisticians</h4>
-<h4 class="date">2023-07-31</h4>
+<h4 class="date">2023-08-01</h4>
 
 </div>
 
@@ -475,9 +475,8 @@ salaries = subset(salaries, select = c(company, level, title,
 </div>
 <div id="model-selection-proccess" class="section level4">
 <h4>Model Selection Proccess</h4>
-<ol style="list-style-type: decimal">
-<li>Selection of Predictors Using AIC/BIC Methodology</li>
-</ol>
+<div id="selection-of-predictors-using-aicbic-methodology" class="section level5">
+<h5>1. Selection of Predictors Using AIC/BIC Methodology</h5>
 <pre class="r"><code>#Model w/ &#39;totalyearlycompensation&#39; as the response variable and all remaining variables as the predictors
 salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
 
@@ -522,9 +521,9 @@ car::vif(salaries_model_back_aic) #Nothing too bad</code></pre>
 ## gender            1.194  2           1.045
 ## Race              1.330  4           1.036
 ## Education         1.405  4           1.043</code></pre>
-<ol start="2" style="list-style-type: decimal">
-<li>Performing Model Transformations</li>
-</ol>
+</div>
+<div id="performing-model-transformations" class="section level5">
+<h5>2. Performing Model Transformations</h5>
 <pre class="r"><code>#Performing log response transformation to improve linearity
 aic_model_log = lm(log(totalyearlycompensation) ~ company + yearsofexperience + title + level + gender + Race + Education, data = salaries)
 
@@ -543,13 +542,17 @@ anova(aic_model_log, aic_model_trans)</code></pre>
 ## 2   3152  98.2 29      6.84 7.57 &lt;2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
-<p>Based upon the results of our test, we calculate a p-value of &lt;
-2.2e-16 meaning that we reject the <code>aic_model_log</code>; thus, the
-<code>aic_model_trans</code> model is preferred.</p>
+<p>Based upon the results of our anova test, we calculated a p-value of
+&lt; 2.2e-16 meaning that we reject the log model
+(<code>aic_model_log</code>) and would prefer the full transformation
+model(<code>aic_model_trans</code>).</p>
 <pre class="r"><code>#Removing influential data points from the model
 aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) &lt; 4 / length(cooks.distance(aic_model_trans)))</code></pre>
-<div id="section" class="section level63">
-<p class="heading"></p>
+<p>Cook’s distance was employed to identify influential data points in
+the <code>aic_model_trans</code>. A threshold was set, typically at
+4/<code>n</code>, where <code>n</code> is the number of observations.
+Observations with a Cook’s distance larger than this threshold were
+considered influential and were removed.</p>
 <ol start="3" style="list-style-type: decimal">
 <li>Run Diagnostics</li>
 </ol>
@@ -605,8 +608,7 @@ kable(df_results, &quot;simple&quot;, col.names = column_names)</code></pre>
 </tr>
 </tbody>
 </table>
-</div>
-<div id="section-1" class="section level63">
+<div id="section" class="section level63">
 <p class="heading"></p>
 <ol start="4" style="list-style-type: decimal">
 <li>Testing model using test / train</li>
@@ -646,14 +648,13 @@ for(i in 1:num_sims){
   rmse_tst[i] = rmse(tst$totalyearlycompensation, exp(predict(sim_fit, tst)))
 }
 
-#Can use r markdown to compare the two numbers and show its significance 
+#Think we should comment this out and call this out in the results section
 mean(rmse_trn)</code></pre>
 <pre><code>## [1] 61678</code></pre>
 <pre class="r"><code>mean(rmse_tst)</code></pre>
 <pre><code>## [1] 53942</code></pre>
 <ol start="5" style="list-style-type: decimal">
-<li>Using Model (Name of model we select here) to make
-<code>totalyearlycompensation</code> predictions</li>
+<li>Model Predictions</li>
 </ol>
 <pre class="r"><code>#Predict salaries
 #salary_1 = data.frame(company = &quot;Amazon&quot;, level = &quot;L4&quot;, title = &quot;Software Engineer&quot;, #yearsofexperience = 0, gender = &quot;Female&quot;, Race = &quot;Asian&quot;, Education = &quot;Master&#39;s Degree&quot;) #150000
@@ -669,8 +670,11 @@ mean(rmse_trn)</code></pre>
 </div>
 </div>
 </div>
+</div>
 <div id="results" class="section level3">
 <h3><u>Results</u></h3>
+<p>Based on our results, we expect our model to deliver a 87.2612%
+accuracy rating.</p>
 <p>Diagnostics</p>
 <pre class="r"><code>#Plot diagnostics
 par(mfrow = c(1, 2))
@@ -701,7 +705,68 @@ abline(0, 1, col = &quot;dodgerblue&quot;)</code></pre>
 </div>
 <div id="discussion" class="section level3">
 <h3><u>Discussion</u></h3>
+<div id="understanding-the-final-model" class="section level4">
+<h4>Understanding the Final Model</h4>
+<p>Our final model, <code>aic_model_final</code>, includes interactions
+between company, years of experience, and title, along with other
+factors such as level, gender, race, and education. The model was
+carefully constructed through multiple steps including log
+transformation, interaction exploration, and removal of influential data
+points.</p>
+</div>
+<div id="key-findings" class="section level4">
+<h4>Key Findings</h4>
+<ol style="list-style-type: decimal">
+<li><p><strong>Interactions</strong>: The interactions between company,
+yearsofexperience, and title suggest that the relationship between these
+factors and total yearly compensation is not simply additive. This
+reflects the complexity of compensation structures in the real world,
+where various elements can synergistically affect the outcome.</p></li>
+<li><p><strong>Transformations and Subset Selection</strong>: Log
+transformation of the total yearly compensation helped to linearize the
+relationship with predictors. Additionally, the use of Cook’s distance
+to exclude influential points contributed to model robustness.</p></li>
+<li><p><strong>Significance of Factors</strong>: The inclusion of
+categorical variables such as gender, race, and education may imply
+societal or industry-specific trends affecting salary. These factors
+should be interpreted with caution and in the context of broader
+research and understanding.</p></li>
+</ol>
+</div>
+<div id="utility-of-the-final-model" class="section level4">
+<h4>Utility of the Final Model</h4>
+<p>The final model, known as <code>aic_model_final</code>, represents an
+intricate understanding of how various factors like company, years of
+experience, title, level, gender, race, and education interact to
+influence total yearly compensation. This is not only a strategic tool
+for HR professionals but also a subject of great interest for data
+science students like us, and potentially a valuable resource for
+sociological studies.</p>
+<p>The realization that factors such as gender, race, and education can
+significantly impact total yearly compensation even in tech companies
+brings additional depth to the model. It goes beyond mere corporate
+strategy, offering insights that can be applied in social science
+research to understand biases and inequalities in the workplace.</p>
+<p>Individuals seeking jobs, organizations aiming to design more
+tailored and competitive compensation plans, and researchers examining
+societal trends can all benefit from this model. The nuanced
+understanding of how different variables interplay offers a unique lens
+into the underlying dynamics of the job market.</p>
+<p>However, the model’s utility is not without caveats. Its specific
+interactions and potential biases in data collection may limit its
+generalizability. The handling of sensitive areas such as gender and
+race requires thoughtful consideration, ensuring that insights align
+with ethical guidelines.</p>
+<p>In conclusion, <code>aic_model_final</code> is a robust and
+multifaceted tool. Its applications are broad, ranging from individual
+and organizational decision-making to broader sociological analysis. It
+must be leveraged thoughtfully to realize its full potential and
+contribute to a more informed and equitable society.</p>
+</div>
+<div id="limitations-and-areas-for-improvement" class="section level4">
+<h4>Limitations and Areas for Improvement</h4>
 <hr />
+</div>
 </div>
 <div id="appendix" class="section level3">
 <h3><u>Appendix</u></h3>
@@ -825,101 +890,6 @@ abline(h=0)</code></pre>
 <pre class="r"><code>#anova(salaries_model_add, salaries_model_two_int)
 
 #anova(salaries_model_two_int, salaries_model_three_int)</code></pre>
-<p>Predictor/Response Transforamtion Models</p>
-<pre class="r"><code># # Create a model with transformed predictors
-# model_res_trans= lm(log(totalyearlycompensation) ~ yearsofexperience, data = salaries)
-# summary(model_res_trans)
-# 
-# # Plot the data
-#  plot(log(totalyearlycompensation) ~ yearsofexperience, data = salaries,
-#       xlab = &quot;Years of Experience&quot;,
-#       ylab = &quot;Log of Total Yearly Compensation&quot;,
-#       main = &quot;Scatter plot with fitted line for log-transformed response model&quot;)
-# 
-# # Add the fitted line
-# abline(model_res_trans, col = &quot;red&quot;)
-# 
-# par(mfrow = c(1, 2))
-# 
-# # Residuals vs Fitted values plot
-# plot(fitted(model_res_trans), resid(model_res_trans), col = &quot;grey&quot;, pch = 20,
-#      xlab = &quot;Fitted&quot;, ylab = &quot;Residuals&quot;, main = &quot;Fitted versus Residuals&quot;)
-# abline(h = 0, col = &quot;darkorange&quot;, lwd = 2)
-# 
-# # Q-Q plot
-# qqnorm(resid(model_res_trans), main = &quot;Normal Q-Q Plot&quot;, col = &quot;darkgrey&quot;)
-# qqline(resid(model_res_trans), col = &quot;dodgerblue&quot;, lwd = 2)
-# 
-# library(lmtest)
-# bptest(model_res_trans)
-# shapiro.test(resid(model_res_trans))
-# 
-# # Build a linear model with log-transformed response and predictor
-# salaries_model_res_pred_trans = lm(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries)
-# 
-# summary(salaries_model_res_pred_trans)
-# 
-# par(mfrow = c(1, 1))
-# 
-# # Plot the data
-#  plot(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries,
-#       xlab = &quot;Log of Years of Experience&quot;,
-#       ylab = &quot;Log of Total Yearly Compensation&quot;,
-#       main = &quot;Scatter plot with fitted line for log-transformed response/predict model&quot;)
-# 
-# # Add the fitted line
-# abline(salaries_model_res_pred_trans, col = &quot;red&quot;)
-# 
-# par(mfrow = c(1, 2))
-# 
-# # Residuals vs Fitted values plot
-# plot(fitted(salaries_model_res_pred_trans), resid(salaries_model_res_pred_trans), col = &quot;grey&quot;, pch = 20,
-#      xlab = &quot;Fitted&quot;, ylab = &quot;Residuals&quot;, main = &quot;Fitted versus Residuals&quot;)
-# abline(h = 0, col = &quot;darkorange&quot;, lwd = 2)
-# 
-# # Q-Q plot
-# qqnorm(resid(salaries_model_res_pred_trans), main = &quot;Normal Q-Q Plot&quot;, col = &quot;darkgrey&quot;)
-# qqline(resid(salaries_model_res_pred_trans), col = &quot;dodgerblue&quot;, lwd = 2)
-# 
-# library(lmtest)
-# bptest(salaries_model_res_pred_trans)
-# shapiro.test(resid(salaries_model_res_pred_trans))
-# 
-# 
-# # Create a model with transformed predictors
-# salaries_model_pred_trans = lm(totalyearlycompensation ~ yearsofexperience + I(yearsofexperience^2), data = salaries)
-# 
-# # Summarize the model
-# summary(salaries_model_pred_trans)
-# 
-# par(mfrow = c(1, 1))
-# 
-# # Plot the data
-# plot(totalyearlycompensation ~ yearsofexperience, data = salaries,
-#      xlab = &quot;Years of Experience&quot;,
-#      ylab = &quot;Total Yearly Compensation&quot;,
-#      main = &quot;Scatter plot with polynomial fit&quot;)
-# 
-# # Add the polynomial fit
-# years = seq(min(salaries$yearsofexperience), max(salaries$yearsofexperience), length.out = 100)
-# predicted_compensation = predict(salaries_model_pred_trans, newdata = data.frame(yearsofexperience = years))
-# 
-# lines(years, predicted_compensation, col = &quot;red&quot;, lwd = 2)
-# 
-# par(mfrow = c(1, 2))
-# 
-# # Residuals vs Fitted values plot
-# plot(fitted(salaries_model_pred_trans), resid(salaries_model_pred_trans), col = &quot;grey&quot;, pch = 20,
-#      xlab = &quot;Fitted&quot;, ylab = &quot;Residuals&quot;, main = &quot;Fitted versus Residuals&quot;)
-# abline(h = 0, col = &quot;darkorange&quot;, lwd = 2)
-# 
-# # Q-Q plot
-# qqnorm(resid(salaries_model_pred_trans), main = &quot;Normal Q-Q Plot&quot;, col = &quot;darkgrey&quot;)
-# qqline(resid(salaries_model_pred_trans), col = &quot;dodgerblue&quot;, lwd = 2)
-# 
-# library(lmtest)
-# bptest(salaries_model_pred_trans)
-# shapiro.test(resid(salaries_model_pred_trans))</code></pre>
 <p>Model Selection</p>
 <pre class="r"><code>library(car)
 library(lmtest)

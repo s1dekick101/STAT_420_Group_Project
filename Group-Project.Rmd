@@ -86,7 +86,7 @@ salaries = subset(salaries, select = c(company, level, title,
 
 #### Model Selection Proccess 
 
-1. Selection of Predictors Using AIC/BIC Methodology
+##### 1. Selection of Predictors Using AIC/BIC Methodology
 
 ```{r}
 #Model w/ 'totalyearlycompensation' as the response variable and all remaining variables as the predictors
@@ -124,7 +124,7 @@ Based upon the results of our test, we calculate a p-value of `r anova(salaries_
 car::vif(salaries_model_back_aic) #Nothing too bad
 ```
   
-2. Performing Model Transformations
+##### 2. Performing Model Transformations
 
 ```{r}
 #Performing log response transformation to improve linearity
@@ -143,7 +143,7 @@ Based upon the results of our anova test, we calculated a p-value of < 2.2e-16 m
 aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
 ```
 
-###############################################################
+Cook's distance was employed to identify influential data points in the `aic_model_trans`. A threshold was set, typically at 4/`n`, where `n` is the number of observations. Observations with a Cook's distance larger than this threshold were considered influential and were removed.
 
 3. Run Diagnostics
 
@@ -287,6 +287,31 @@ Predictions?
 
 ### <u>Discussion</u>
 
+#### Understanding the Final Model
+
+Our final model, `aic_model_final`, includes interactions between company, years of experience, and title, along with other factors such as level, gender, race, and education. The model was carefully constructed through multiple steps including log transformation, interaction exploration, and removal of influential data points.
+
+#### Key Findings
+
+1. **Interactions**: The interactions between company, yearsofexperience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome.
+
+2. **Transformations and Subset Selection**: Log transformation of the total yearly compensation helped to linearize the relationship with predictors. Additionally, the use of Cook's distance to exclude influential points contributed to model robustness.
+
+3. **Significance of Factors**: The inclusion of categorical variables such as gender, race, and education may imply societal or industry-specific trends affecting salary. These factors should be interpreted with caution and in the context of broader research and understanding.
+
+#### Utility of the Final Model
+
+The final model, known as `aic_model_final`, represents an intricate understanding of how various factors like company, years of experience, title, level, gender, race, and education interact to influence total yearly compensation. This is not only a strategic tool for HR professionals but also a subject of great interest for data science students like us, and potentially a valuable resource for sociological studies.
+
+The realization that factors such as gender, race, and education can significantly impact total yearly compensation even in tech companies brings additional depth to the model. It goes beyond mere corporate strategy, offering insights that can be applied in social science research to understand biases and inequalities in the workplace.
+
+Individuals seeking jobs, organizations aiming to design more tailored and competitive compensation plans, and researchers examining societal trends can all benefit from this model. The nuanced understanding of how different variables interplay offers a unique lens into the underlying dynamics of the job market.
+
+However, the model's utility is not without caveats. Its specific interactions and potential biases in data collection may limit its generalizability. The handling of sensitive areas such as gender and race requires thoughtful consideration, ensuring that insights align with ethical guidelines.
+
+In conclusion, `aic_model_final` is a robust and multifaceted tool. Its applications are broad, ranging from individual and organizational decision-making to broader sociological analysis. It must be leveraged thoughtfully to realize its full potential and contribute to a more informed and equitable society.
+
+#### Limitations and Areas for Improvement
 
 ***
 
@@ -409,105 +434,6 @@ bptest(salaries_model_fix)
 
 ```
 
-
-Predictor/Response Transforamtion Models
-```{r}
-# # Create a model with transformed predictors
-# model_res_trans= lm(log(totalyearlycompensation) ~ yearsofexperience, data = salaries)
-# summary(model_res_trans)
-# 
-# # Plot the data
-#  plot(log(totalyearlycompensation) ~ yearsofexperience, data = salaries,
-#       xlab = "Years of Experience",
-#       ylab = "Log of Total Yearly Compensation",
-#       main = "Scatter plot with fitted line for log-transformed response model")
-# 
-# # Add the fitted line
-# abline(model_res_trans, col = "red")
-# 
-# par(mfrow = c(1, 2))
-# 
-# # Residuals vs Fitted values plot
-# plot(fitted(model_res_trans), resid(model_res_trans), col = "grey", pch = 20,
-#      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-# abline(h = 0, col = "darkorange", lwd = 2)
-# 
-# # Q-Q plot
-# qqnorm(resid(model_res_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-# qqline(resid(model_res_trans), col = "dodgerblue", lwd = 2)
-# 
-# library(lmtest)
-# bptest(model_res_trans)
-# shapiro.test(resid(model_res_trans))
-# 
-# # Build a linear model with log-transformed response and predictor
-# salaries_model_res_pred_trans = lm(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries)
-# 
-# summary(salaries_model_res_pred_trans)
-# 
-# par(mfrow = c(1, 1))
-# 
-# # Plot the data
-#  plot(log(totalyearlycompensation) ~ log(yearsofexperience+1), data = salaries,
-#       xlab = "Log of Years of Experience",
-#       ylab = "Log of Total Yearly Compensation",
-#       main = "Scatter plot with fitted line for log-transformed response/predict model")
-# 
-# # Add the fitted line
-# abline(salaries_model_res_pred_trans, col = "red")
-# 
-# par(mfrow = c(1, 2))
-# 
-# # Residuals vs Fitted values plot
-# plot(fitted(salaries_model_res_pred_trans), resid(salaries_model_res_pred_trans), col = "grey", pch = 20,
-#      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-# abline(h = 0, col = "darkorange", lwd = 2)
-# 
-# # Q-Q plot
-# qqnorm(resid(salaries_model_res_pred_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-# qqline(resid(salaries_model_res_pred_trans), col = "dodgerblue", lwd = 2)
-# 
-# library(lmtest)
-# bptest(salaries_model_res_pred_trans)
-# shapiro.test(resid(salaries_model_res_pred_trans))
-# 
-# 
-# # Create a model with transformed predictors
-# salaries_model_pred_trans = lm(totalyearlycompensation ~ yearsofexperience + I(yearsofexperience^2), data = salaries)
-# 
-# # Summarize the model
-# summary(salaries_model_pred_trans)
-# 
-# par(mfrow = c(1, 1))
-# 
-# # Plot the data
-# plot(totalyearlycompensation ~ yearsofexperience, data = salaries,
-#      xlab = "Years of Experience",
-#      ylab = "Total Yearly Compensation",
-#      main = "Scatter plot with polynomial fit")
-# 
-# # Add the polynomial fit
-# years = seq(min(salaries$yearsofexperience), max(salaries$yearsofexperience), length.out = 100)
-# predicted_compensation = predict(salaries_model_pred_trans, newdata = data.frame(yearsofexperience = years))
-# 
-# lines(years, predicted_compensation, col = "red", lwd = 2)
-# 
-# par(mfrow = c(1, 2))
-# 
-# # Residuals vs Fitted values plot
-# plot(fitted(salaries_model_pred_trans), resid(salaries_model_pred_trans), col = "grey", pch = 20,
-#      xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-# abline(h = 0, col = "darkorange", lwd = 2)
-# 
-# # Q-Q plot
-# qqnorm(resid(salaries_model_pred_trans), main = "Normal Q-Q Plot", col = "darkgrey")
-# qqline(resid(salaries_model_pred_trans), col = "dodgerblue", lwd = 2)
-# 
-# library(lmtest)
-# bptest(salaries_model_pred_trans)
-# shapiro.test(resid(salaries_model_pred_trans))
-
-```
 
 Model Selection
 ```{r}
