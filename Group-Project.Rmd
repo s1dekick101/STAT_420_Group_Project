@@ -11,7 +11,7 @@ urlcolor: cyan
 
 ### <u>Introduction</u>
 
-As data science students, we're intrigued by the compensation structures within leading tech companies like Amazon and Google. To delve into this interest, we're undertaking a project to analyze a dataset of 12,647 salary records from these companies, with an aim to construct a predictive model for annual total compensation.
+As data science students, we're intrigued by the compensation structures within leading tech companies like Amazon and Google. To delve into this interest, we're undertaking a project to analyze a dataset of 12,647 salary records from these two companies, with an aim to construct a predictive model for annual total compensation. This dataset was originally created on Kaggle, with data sourced from scraping levels.fyi.
 
 This dataset, `Levels-Fyi-Salary-Data-Cleaned-US.csv`, provides a unique and in-depth perspective into the salary structures of numerous top-tier companies. The dataset encompasses 28 variables, covering a variety of aspects such as company, level, title, location, years of experience, years at the company, and various demographic factors including gender and education level. Of particular interest to us is the `totalyearlycompensation` variable, which will serve as the response variable in our analysis.
 
@@ -61,7 +61,7 @@ options(digits = 4)
 
 #### Data Pre-Processing 
 
-First, we had to clean and prepare our data to make it fit for analysis. We removed any records with missing values, and converted all categorical variables into factors. We chose to exclude certain columns from our final data set for these reasons: 
+First, we had to clean and prepare our data to make it fit for analysis. We removed any records with missing values, and converted all categorical variables into factors. We chose to exclude certain columns from our final dataset for these reasons: 
 
 - The column was not a descriptive attribute of the employee (`timestamp`, `cityid`, `dmaid`, `rowNumber`) 
 - The column was a dummy variable with redundant data also stored in another column (`Masters_Degree`, `Bachelors_Degree`, `Doctorate_Degree`, `Highschool`, `Some_College`, `Race_Asian`, `Race_White`, `Race_Two_Or_More`, `Race_Black`, `Race_Hispanic`, `otherdetails`)
@@ -174,7 +174,7 @@ get_loocv_rmse = function(model){
 
 #Diagnostics 
 adj_final = summary(aic_model_final)$adj 
-loocv_rmse_final =get_loocv_rmse(aic_model_final)
+loocv_rmse_final = get_loocv_rmse(aic_model_final)
 shapiro_final = shapiro.test(resid(aic_model_final))$p.value
 bp_final = test = bptest(aic_model_final)$p.value
 ```
@@ -194,10 +194,15 @@ trn = salaries[trn_idx, ]
 tst = salaries[-trn_idx, ]
 
 #Calculating average percent error
+
+get_percent_error = function(pred_salary, actual_salary){
+  mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
+}
+
 actual_salary = tst$totalyearlycompensation
 pred_salary = exp(predict(aic_model_final, tst))
-max_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary), max(pred_salary))
-percent_error = mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
+max_pe_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary), max(pred_salary))
+percent_error = get_percent_error(pred_salary, actual_salary)
 ```
 
 ##### 5. Model simulation  
@@ -220,27 +225,74 @@ for(i in 1:num_sims){
   rmse_trn[i] = rmse(trn$totalyearlycompensation, exp(predict(sim_fit, trn)))
   rmse_tst[i] = rmse(tst$totalyearlycompensation, exp(predict(sim_fit, tst)))
 }
-
-#Think we should comment this out and call this out in the results section
-mean(rmse_trn)
-mean(rmse_tst)
 ```
 
 
 ##### 6. Model Predictions  
 
 ```{r, message = FALSE, warning = FALSE}
+#Initializing variables for predicting a persons salary based upon their race
+race = c("White", "Black", "Hispanic", "Asian", "Two Or More")
+amazon_salaries_race = rep(0, length(unique(salaries$Race)))
+google_salaries_race = rep(0, length(unique(salaries$Race)))
 
-#Predict salaries
-#salary_1 = data.frame(company = "Amazon", level = "L4", title = "Software Engineer", #yearsofexperience = 0, gender = "Female", Race = "Asian", Education = "Master's Degree") #150000
+for(i in 1:length(unique(salaries$Race))) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree")))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree")))
 
-#salary_2 = data.frame(company = "Amazon", level = "L4", title = "Software Engineer", #yearsofexperience = 2, gender = "Male", Race = "Hispanic", Education = "Bachelor's Degree") #152000
+  amazon_salaries_race[i] = sal1
+  google_salaries_race[i] = sal2
+}
 
-#salary_3 = data.frame(company = "Google", level = "L5", title = "Software Engineer", #yearsofexperience = 9, gender = "Male", Race = "Asian", Education = "PhD") #396000
+# Initializing variables for predicting a person's salary based upon their gender
+gender = c("Male", "Female")
+amazon_salaries_gender = rep(0, length(gender))
+google_salaries_gender = rep(0, length(gender))
 
-#exp(predict(aic_model_final, newdata = salary_1))
-#exp(predict(aic_model_final, newdata = salary_2))
-#exp(predict(aic_model_final, newdata = salary_3))
+for(i in 1:length(gender)) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = gender[i], Race = "White", Education = "Bachelor's Degree")))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = gender[i], Race = "White", Education = "Bachelor's Degree")))
+
+  amazon_salaries_gender[i] = sal1
+  google_salaries_gender[i] = sal2
+}
+
+# Initializing variables for predicting a person's salary based upon their education level
+education_levels = c("Highschool", "Bachelor's Degree", "Master's Degree", "PhD", "Some College")
+amazon_salaries_education = rep(0, length(education_levels))
+google_salaries_education = rep(0, length(education_levels))
+
+for(i in 1:length(education_levels)) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = education_levels[i])))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = education_levels[i])))
+
+  amazon_salaries_education[i] = sal1
+  google_salaries_education[i] = sal2
+}
+
+#Predict salaries across each quartile
+employee_q1 = data.frame(company = "Amazon", level = "L3", title = "Human Resources", yearsofexperience = 5, gender = "Female", Race = "Asian", Education = "Master's Degree") #61000
+employee_q2 = data.frame(company = "Google", level = "L8", title = "Technical Program Manager", yearsofexperience = 22, gender = "Female", Race = "White", Education = "Bachelor's Degree") #694000
+employee_q3 = data.frame(company = "Amazon", level = "L7", title = "Software Engineering Manager", yearsofexperience = 18, gender = "Other", Race = "Two Or More", Education = "Master's Degree") #800000
+employee_q4 = data.frame(company = "Google", level = "L8", title = "Software Engineer", yearsofexperience = 23, gender = "Male", Race = "White", Education = "Bachelor's Degree") #1160000
+
+pred_salary_q1 = exp(predict(aic_model_final, newdata = employee_q1))
+pred_salary_q2 = exp(predict(aic_model_final, newdata = employee_q2))
+pred_salary_q3 = exp(predict(aic_model_final, newdata = employee_q3))
+pred_salary_q4 = exp(predict(aic_model_final, newdata = employee_q4))
+actual_salary_q1 = 61000
+actual_salary_q2 = 694000
+actual_salary_q3 = 800000
+actual_salary_q4 = 1160000
+
+pe_q1 = get_percent_error(pred_salary_q1, actual_salary_q1)
+pe_q2 = get_percent_error(pred_salary_q2, actual_salary_q2)
+pe_q3 = get_percent_error(pred_salary_q3, actual_salary_q3)
+pe_q4 = get_percent_error(pred_salary_q4, actual_salary_q4)
+
+#Will be used later for the discussion on why google entry level is so high
+#exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
+#exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
 ```
 ***
 
@@ -251,9 +303,9 @@ mean(rmse_tst)
 #### 1. Diagnostics Table
 
 ```{r}
-row_names = c("Adjusted R", "LOOCV-RMSE", "Shapiro Test", "BP Test")
-column_names = c(" ", "Model")
-diagnostics = c(adj_final, loocv_rmse_final, shapiro_final, bp_final)
+row_names = c("Adjusted R", "LOOCV-RMSE", "Shapiro Test", "BP Test", "Average RMSE Train", "Average RMSE Test", "Percent Error")
+column_names = c("Statistic", "Value")
+diagnostics = c(adj_final, loocv_rmse_final, shapiro_final, bp_final, mean(rmse_trn), mean(rmse_tst), percent_error)
 df_results = data.frame(row_names, diagnostics)
 kable(df_results, "simple", col.names = column_names)
 ```
@@ -307,59 +359,36 @@ plot(pred_salary, actual_salary,
      xlab = "Predicted Salaries Prices",
      ylab = "Actual Salaries",
      main = "Predicted vs. Actual Salaries",
-     xlim = c(0, max_salary),
-     ylim = c(0, max_salary)
+     xlim = c(0, max_pe_salary),
+     ylim = c(0, max_pe_salary)
      )
 abline(0, 1, col = "dodgerblue")
 ```
 
-##### 5. Testing Salary Predictions
+##### 5. Practical Application of Model 
 
+Predicting Salaries in Four Quartiles:
 ```{r}
-
+row_names = c("First", "Second", "Third", "Fourth")
+column_names = c("Quartile", "Predicted", "Actual", "Percent Error")
+pred_salaries = c(pred_salary_q1, pred_salary_q2, pred_salary_q3, pred_salary_q4)
+actual_salaries = c(actual_salary_q1, actual_salary_q2, actual_salary_q3, actual_salary_q4)
+pe_salaries = c(pe_q1, pe_q2, pe_q3, pe_q4)
+df_results = data.frame(row_names, pred_salaries, actual_salaries, pe_salaries)
+kable(df_results, "simple", col.names = column_names)
 ```
 
-
-##### Practical Application of Model 
-
+Salaries Compared Across Different Factors:
 ```{r, fig.dim = c(12, 10)}
-
-#Initializing variables for predicting a persons salary based upon their race
-race = c("White", "Black", "Hispanic", "Asian", "Two Or More")
-amamzon_salaries = rep(0, length(unique(salaries$Race)))
-google_salaries = rep(0, length(unique(salaries$Race)))
-
-for(i in 1:length(unique(salaries$Race))) {
-  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree")))
-  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree")))
-
-  amamzon_salaries[i] = sal1
-  google_salaries[i] = sal2
-}
-
 # Define common y-axis limits
-max_salary = max(c(amamzon_salaries, google_salaries))*1.1
+max_salary = max(c(amazon_salaries_race, google_salaries_race))*1.1
 
 # Plot
 par(mfrow = c(1,2))
-barplot(amamzon_salaries, names.arg = race, col=rainbow(length(amamzon_salaries)), 
+barplot(amazon_salaries_race, names.arg = race, col=rainbow(length(amazon_salaries_race)), 
         main = "AMZN: L1 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
-barplot(google_salaries, names.arg = race, col=rainbow(length(google_salaries)), 
+barplot(google_salaries_race, names.arg = race, col=rainbow(length(google_salaries_race)), 
         main = "GOOG: L1 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
-
-
-# Initializing variables for predicting a person's salary based upon their gender
-gender = c("Male", "Female")
-amazon_salaries_gender = rep(0, length(gender))
-google_salaries_gender = rep(0, length(gender))
-
-for(i in 1:length(gender)) {
-  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = gender[i], Race = "White", Education = "Bachelor's Degree")))
-  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = gender[i], Race = "White", Education = "Bachelor's Degree")))
-
-  amazon_salaries_gender[i] = sal1
-  google_salaries_gender[i] = sal2
-}
 
 # Plot
 par(mfrow = c(1,2))
@@ -368,31 +397,12 @@ barplot(amazon_salaries_gender, names.arg = gender, col=c("blue", "red"),
 barplot(google_salaries_gender, names.arg = gender, col=c("blue", "red"), 
         main = "GOOG: L1 Salary Based on Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
 
-
-# Initializing variables for predicting a person's salary based upon their education level
-education_levels = c("Highschool", "Bachelor's Degree", "Master's Degree", "PhD", "Some College")
-amazon_salaries_education = rep(0, length(education_levels))
-google_salaries_education = rep(0, length(education_levels))
-
-for(i in 1:length(education_levels)) {
-  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = education_levels[i])))
-  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = education_levels[i])))
-
-  amazon_salaries_education[i] = sal1
-  google_salaries_education[i] = sal2
-}
-
 # Plot
 par(mfrow = c(1,2))
 barplot(amazon_salaries_education, names.arg = education_levels, col=rainbow(length(amazon_salaries_education)), 
         main = "AMZN: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary))
 barplot(google_salaries_education, names.arg = education_levels, col=rainbow(length(google_salaries_education)), 
         main = "GOOG: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary))
-
-
-#Will be used later for the discussion on why google entry level is so high
-#exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
-#exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
 ```
 
 ***
