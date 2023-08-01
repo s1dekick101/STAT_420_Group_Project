@@ -255,11 +255,13 @@ mean(rmse_tst)
 
 ### <u>Results</u>
 
-Based on our results, we expect our model to deliver a **`r 100 - percent_error`%** accuracy rating.
+#### Accuracy Rating
+
+The final model we have selected demonstrated an accuracy rating of **`r 100 - percent_error`%**. This is indicative of the model's ability to fit the data, but it's worth noting that there may be room for further refinement and improvement.
 
 #### Diagnostics
 
-##### Q-Q Plots
+##### 1. Q-Q Plots
 
 ```{r, fig.dim = c(12, 10)}
 par(mfrow = c(1,3))
@@ -277,7 +279,9 @@ qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot After All Transformations
 qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ```
 
-##### Residuals vs. Fitted Plots
+In our analysis, the Q-Q plots evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
+
+##### 2. Residuals vs. Fitted Plots
 ```{r, fig.dim = c(12, 10)}
 par(mfrow = c(1,3))
 
@@ -297,12 +301,14 @@ plot(fitted(aic_model_final), resid(aic_model_final), col = "grey", pch = 20,
 abline(h = 0, col = "darkorange", lwd = 2)
 ```
 
+The first Residuals vs. Fitted Plot shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. The third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
 
 ```{r}
 #Insert table with other diagnostics, r.squared etc. 
 ```
 
-Percent Error - Fitted vs. Actual Plot
+##### 3. Percent Error - Fitted vs. Actual Plot
+
 ```{r}
 plot(pred_salary, actual_salary,
      col = "darkgrey",
@@ -315,14 +321,16 @@ plot(pred_salary, actual_salary,
 abline(0, 1, col = "dodgerblue")
 ```
 
+This illustrates the correlation between our final model's salary predictions and the actual salaries. The points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries.
 
-Predictions?
+##### Predictions?
 ```{r}
 
 ```
 
 
-Practical Application of Model 
+##### Practical Application of Model 
+
 ```{r, fig.dim = c(12, 10)}
 
 #Initializing variables for predicting a persons salary based upon their race
@@ -338,12 +346,58 @@ for(i in 1:length(unique(salaries$Race))) {
   google_salaries[i] = sal2
 }
 
-#Plot
+# Define common y-axis limits
+max_salary = max(c(amamzon_salaries, google_salaries))*1.1
+
+# Plot
 par(mfrow = c(1,2))
 barplot(amamzon_salaries, names.arg = race, col=rainbow(length(amamzon_salaries)), 
-        main = "AMZN: L1 Salary Based on Race", ylab = "Total Compensation")
+        main = "AMZN: L1 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
 barplot(google_salaries, names.arg = race, col=rainbow(length(google_salaries)), 
-        main = "GOOG: L1 Salary Based on Race", ylab = "Total Compensation")
+        main = "GOOG: L1 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
+
+
+# Initializing variables for predicting a person's salary based upon their gender
+gender = c("Male", "Female")
+amazon_salaries_gender = rep(0, length(gender))
+google_salaries_gender = rep(0, length(gender))
+
+for(i in 1:length(gender)) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = gender[i], Race = "White", Education = "Bachelor's Degree")))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = gender[i], Race = "White", Education = "Bachelor's Degree")))
+
+  amazon_salaries_gender[i] = sal1
+  google_salaries_gender[i] = sal2
+}
+
+# Plot
+par(mfrow = c(1,2))
+barplot(amazon_salaries_gender, names.arg = gender, col=c("blue", "red"), 
+        main = "AMZN: L1 Salary Based on Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
+barplot(google_salaries_gender, names.arg = gender, col=c("blue", "red"), 
+        main = "GOOG: L1 Salary Based on Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
+
+
+# Initializing variables for predicting a person's salary based upon their education level
+education_levels = c("Highschool", "Bachelor's Degree", "Master's Degree", "PhD", "Some College")
+amazon_salaries_education = rep(0, length(education_levels))
+google_salaries_education = rep(0, length(education_levels))
+
+for(i in 1:length(education_levels)) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = education_levels[i])))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = education_levels[i])))
+
+  amazon_salaries_education[i] = sal1
+  google_salaries_education[i] = sal2
+}
+
+# Plot
+par(mfrow = c(1,2))
+barplot(amazon_salaries_education, names.arg = education_levels, col=rainbow(length(amazon_salaries_education)), 
+        main = "AMZN: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary))
+barplot(google_salaries_education, names.arg = education_levels, col=rainbow(length(google_salaries_education)), 
+        main = "GOOG: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary))
+
 
 #Will be used later for the discussion on why google entry level is so high
 #exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
