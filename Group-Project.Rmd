@@ -74,9 +74,6 @@ library(readr)
 library(stringr)
 salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
 
-#Is this necessary?
-#head(salaries)
-
 #Remove NA records
 salaries = na.omit(salaries)
 
@@ -98,11 +95,24 @@ salaries = subset(salaries, select = c(company, level, title,
 
 #### Model Selection Proccess 
 
-##### 1. Selection of Predictors Using AIC/BIC Methodology
+##### 1. Split the Dataset into Train/Test Data
+
+```{r}
+#Importing library 
+library(caret)
+
+#Split the data 70-30 into train and test sets
+set.seed(22)
+trn_idx = createDataPartition(salaries$level, p = 0.7, list = F)
+trn = salaries[trn_idx, ]
+tst = salaries[-trn_idx, ]
+```
+
+##### 2. Selection of Predictors Using AIC/BIC Methodology
 
 ```{r}
 #Model w/ 'totalyearlycompensation' as the response variable and all remaining variables as the predictors
-salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
+salaries_model = lm(totalyearlycompensation ~ ., data = trn)
 
 #Backward AIC
 salaries_model_back_aic = step(salaries_model,
@@ -110,7 +120,7 @@ salaries_model_back_aic = step(salaries_model,
 
 #Backward BIC
 salaries_model_back_bic = step(salaries_model, direction = "backward",
-                               k = log(nrow(salaries)), trace = 0)
+                               k = log(nrow(trn)), trace = 0)
 ```
 
 -- Using the AIC searching method, we derive a model that uses 7 of the 10 given predictors
@@ -137,34 +147,34 @@ car::vif(salaries_model_back_aic)
 ```
 None of the variance inflation factors are too high in `salaries_model_back_aic`, suggesting collinearity is not an issue. 
 
-##### 2. Performing Model Transformations
+##### 3. Performing Model Transformations
 
 ```{r}
 #Performing log response transformation to improve linearity
-aic_model_log = lm(log(totalyearlycompensation) ~ company + yearsofexperience + title + level + gender + Race + Education, data = salaries)
+aic_model_log = lm(log(totalyearlycompensation) ~ company + yearsofexperience + title + level + gender + Race + Education, data = trn)
 
 #Adding interactions to improve normality, linearity and constant variance
-aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries)
+aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = trn)
 
+#Performing anova test between the two models
 anova(aic_model_log, aic_model_trans)
 ```
-Based upon the results of our anova test, we calculated a p-value of < **`r anova(aic_model_log, aic_model_trans)[2, "Pr(>F)"]`** meaning that we reject the log model (`aic_model_log`) and prefer the larger transformation model(`aic_model_trans`). 
+Based upon the results of our anova test, we calculated a p-value of < **`r anova(aic_model_log, aic_model_trans)[2, "Pr(>F)"]`** meaning that we reject the log model (`aic_model_log`) and prefer the larger transformation model (`aic_model_trans`). 
 
 ```{r}
 #Removing influential data points from the model
-aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
+aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = trn, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
 ```
 
-Cook's distance was employed to identify influential data points in `aic_model_trans`. A threshold was set, typically at 4/`n`, where `n` is the number of observations. Observations with a Cook's distance larger than this threshold were considered influential and were removed.
+Cook's distance was employed to identify influential data points in `aic_model_trans`. A threshold was set, typically at 4/`n`, where `n` is the number of observations. Observations with a Cook's distance larger than this threshold were considered influential and were removed. The final model was saved as `aic_model_final`.
 
-##### 3. Run Diagnostics
+##### 4. Run Diagnostics
 
 ```{r message=FALSE, warning=FALSE}
 #Importing libraries
 library(car)
 library(lmtest)
 library(boot)
-library(caret)
 library(knitr)
 
 #LOOCV RMSE Function - ... 
@@ -182,30 +192,21 @@ shapiro_final = shapiro.test(resid(aic_model_final))$p.value
 bp_final = test = bptest(aic_model_final)$p.value
 ```
 
-##### 4. Testing model using test / train 
+##### 5. Percent Error 
 
 ```{r, message = FALSE, warning = FALSE}
-#Importing library 
-library(caret)
-
-#Split the data 70-30 train and test set
-set.seed(22)
-trn_idx = createDataPartition(salaries$level, p = 0.7, list = F)
-trn = salaries[trn_idx, ]
-tst = salaries[-trn_idx, ]
-
-#Calculating average percent error
 get_percent_error = function(pred_salary, actual_salary){
   mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
 }
 
+#Calculating average percent error of the test set
 actual_salary = tst$totalyearlycompensation
 pred_salary = exp(predict(aic_model_final, tst))
 max_pe_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary), max(pred_salary))
 percent_error = get_percent_error(pred_salary, actual_salary)
 ```
 
-##### 5. Model simulation  
+##### 6.Model Simulation  
 
 ```{r, message = FALSE, warning = FALSE}
 #Simulation Set-Up
@@ -226,7 +227,7 @@ for(i in 1:num_sims){
 }
 ```
 
-##### 6. Model Predictions  
+##### 7. Model Predictions  
 
 ```{r, message = FALSE, warning = FALSE}
 #Initializing variables for predicting a persons salary based upon their race
@@ -426,7 +427,7 @@ Our final model, `aic_model_final`, includes interactions between company, years
 
 ##### 1.Interactions
 
-The interactions between company, yearsofexperience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome.
+The interactions between company, years of experience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome.
   
 DISCUSS improvement of ANOVA TESTS AND ADJUSTED R^2 HERE.
 
@@ -458,11 +459,21 @@ The realization that factors such as gender, race, and education can significant
 
 Individuals seeking jobs, organizations aiming to design more tailored and competitive compensation plans, and researchers examining societal trends can all benefit from this model. The nuanced understanding of how different variables interplay offers a unique lens into the underlying dynamics of the job market.
 
-However, the model's utility is not without caveats. Its specific interactions and potential biases in data collection may limit its generalizability. The handling of sensitive areas such as gender and race requires thoughtful consideration, ensuring that insights align with ethical guidelines.
+However, the model's utility is not without caveats. Its specific interactions and potential biases in data collection may limit its general application and scalability. The handling of sensitive areas such as gender and race requires thoughtful consideration, ensuring that insights align with ethical guidelines.
 
 In conclusion, `aic_model_final` is a robust and multifaceted tool. Its applications are broad, ranging from individual and organizational decision-making to broader sociological analysis. It must be leveraged thoughtfully to realize its full potential and contribute to a more informed and equitable society.
 
 #### Limitations and Areas for Improvement
+
+There were various lessons learned while conducting this project. The first challenge the team encountered was during the initial data preparation phase. Because the dataset was a) crowd-sourced and b) scraped from a website, this led to many errors and inconsistencies which required vigorous data cleaning. The team used techniques including clustering, spell checks, removing missing fields, and cross validation in order to standardize the dataset. Ultimately, although we were able to produce a dataset fit for analysis, we were still limited by needing to rely on a user's "standard of truth" instead of an official or confirmed source. For example, a user could easily have input random attributes and we would have no way of knowing.
+
+This leads to the next issue we faced, which was that the raw data was not evenly distributed across the various attributes. The data was heavily skewed towards mid-level entries, and we did not have data for nearly as many entry-level or executive-level positions. Additionally, there were far more entries for Amazon than Google employees. This presented a challenge when trying to build the model under LINE assumptions. 
+
+In the future, there are several areas of improvement we'd explore:
+
+- Gather more data from levels.fyi to ensure more even distribution and representation of salaries.
+- Use an official source of employee data such as a database from the U.S. Department of Labor.
+- Explore other models and techniques outside of linear regression to perhaps find a better model for prediction.
 
 ***
 
