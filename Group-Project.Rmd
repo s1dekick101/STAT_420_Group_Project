@@ -97,7 +97,7 @@ salaries = subset(salaries, select = c(company, level, title,
 
 ##### 1. Split the Dataset into Train/Test Data
 
-```{r}
+```{r warning=FALSE}
 #Importing library 
 library(caret)
 
@@ -109,6 +109,8 @@ tst = salaries[-trn_idx, ]
 ```
 
 ##### 2. Selection of Predictors Using AIC/BIC Methodology
+
+Please see Appendix for AIC/BIC forward and stepwise procedures
 
 ```{r}
 #Model w/ 'totalyearlycompensation' as the response variable and all remaining variables as the predictors
@@ -130,9 +132,6 @@ salaries_model_back_bic = step(salaries_model, direction = "backward",
 -- Using the BIC searching method, we derive a model that uses 4 of the 10 given predictors
 
    Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_bic)[-1])`</u>**
-
-Please see Appendix for forward and stepwise procedures.
-  
 
 ```{r}
 #Performing anova test on the AIC and BIC models 
@@ -166,9 +165,11 @@ Based upon the results of our anova test, we calculated a p-value of < **`r anov
 aic_model_final = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = trn, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
 ```
 
-Cook's distance was employed to identify influential data points in `aic_model_trans`. A threshold was set, typically at 4/`n`, where `n` is the number of observations. Observations with a Cook's distance larger than this threshold were considered influential and were removed. The final model was saved as `aic_model_final`.
+Cook's distance was employed to identify influential data points in `aic_model_trans`. A threshold was set, typically at 4/`n`, where `n` is the number of observations. Observations with a Cook's distance larger than this threshold were considered influential and removed.
 
-##### 4. Run Diagnostics
+The final model was saved as `aic_model_final`.
+
+##### 4. Running Diagnostics
 
 ```{r message=FALSE, warning=FALSE}
 #Importing libraries
@@ -177,7 +178,7 @@ library(lmtest)
 library(boot)
 library(knitr)
 
-#LOOCV RMSE Function - ... 
+#LOOCV RMSE Function - Gets the difference between the predicted values a model generates and the actual values 
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
 }
@@ -190,11 +191,13 @@ adj_final = summary(aic_model_final)$adj
 loocv_rmse_final = get_loocv_rmse(aic_model_final)
 shapiro_final = shapiro.test(resid(aic_model_final))$p.value
 bp_final = test = bptest(aic_model_final)$p.value
+loocv_rmse_final
 ```
 
 ##### 5. Percent Error 
 
 ```{r, message = FALSE, warning = FALSE}
+#Get Percent Error Function - Calculates the percentage of error we expect our model to generate
 get_percent_error = function(pred_salary, actual_salary){
   mean((abs(pred_salary - actual_salary) / pred_salary)) * 100
 }
@@ -214,6 +217,7 @@ num_sims = 1000
 rmse_trn = rep(0, num_sims)
 rmse_tst = rep(0, num_sims)
 
+#RMSE Function - Finds the difference between the predicted values and the actual values
 rmse = function(y, y_hat){
   sqrt(sum((y - y_hat) ^ 2) / length(y))
 }
@@ -288,10 +292,6 @@ pe_q1 = get_percent_error(pred_salary_q1, actual_salary_q1)
 pe_q2 = get_percent_error(pred_salary_q2, actual_salary_q2)
 pe_q3 = get_percent_error(pred_salary_q3, actual_salary_q3)
 pe_q4 = get_percent_error(pred_salary_q4, actual_salary_q4)
-
-#Will be used later for the discussion on why google entry level is so high
-#exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
-#exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
 ```
 ***
 
@@ -300,11 +300,11 @@ pe_q4 = get_percent_error(pred_salary_q4, actual_salary_q4)
 #### Diagnostics
 
 ##### 1. Diagnostics Table
-Should we mention loocv, shapiro, and bp when they don't look good? 
+
 ```{r}
-row_names = c("LOOCV-RMSE", "Shapiro Test", "BP Test", "Average RMSE Train", "Average RMSE Test", "Percent Error")
+row_names = c("Average RMSE Train", "Average RMSE Test", "Percent Error")
 column_names = c("Statistic", "Value")
-diagnostics = c(loocv_rmse_final, shapiro_final, bp_final, mean(rmse_trn), mean(rmse_tst), percent_error)
+diagnostics = c(mean(rmse_trn), mean(rmse_tst), percent_error)
 df_results = data.frame(row_names, diagnostics)
 kable(df_results, "simple", col.names = column_names)
 ```
@@ -319,6 +319,8 @@ adj_r = c(adj_initial, adj_aic, adj_log, adj_final)
 df_results = data.frame(row_names, adj_r)
 kable(df_results, "simple", col.names = column_names)
 ```
+
+Through the variable section process and utilizing model transformation techniques, our model achieved a higher Adjusted R, which indicates that our final model improved in calculating fitted values.   
 
 ##### 3. Q-Q Plots
 
@@ -338,6 +340,7 @@ qqline(resid(aic_model_log), col = "dodgerblue", lwd = 2)
 qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot After All Transformations", col = "darkgrey")
 qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ```
+As more transformations were added to the model the wildness of the tails remained largely unchanged, which indicates that our dataset likely does not follow a normal distribution. 
 
 ##### 4. Residuals vs. Fitted Plots
 
@@ -383,7 +386,7 @@ row_names = c("First", "Second", "Third", "Fourth")
 column_names = c("Quartile", "Predicted", "Actual", "Percent Error")
 pred_salaries = c(pred_salary_q1, pred_salary_q2, pred_salary_q3, pred_salary_q4)
 actual_salaries = c(actual_salary_q1, actual_salary_q2, actual_salary_q3, actual_salary_q4)
-pe_salaries = c(pe_q1, pe_q2, pe_q3, pe_q4)
+pe_salaries = c(round(pe_q1, 2), round(pe_q2, 2), round(pe_q3, 2), round(pe_q4, 2))
 df_results = data.frame(row_names, pred_salaries, actual_salaries, pe_salaries)
 kable(df_results, "simple", col.names = column_names)
 ```
@@ -392,6 +395,9 @@ Comparison Plots of Salaries Across Different Factors:
 ```{r, fig.dim = c(12, 10)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_race, google_salaries_race))*1.1
+```
+
+```{r, fig.dim = c(12, 10)}
 
 # Plot
 par(mfrow = c(1,2))
@@ -399,6 +405,11 @@ barplot(amazon_salaries_race, names.arg = race, col=rainbow(length(amazon_salari
         main = "AMZN: L1 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
 barplot(google_salaries_race, names.arg = race, col=rainbow(length(google_salaries_race)), 
         main = "GOOG: L1 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
+```
+
+The graph above, displays the expected Entry Level (L1) salary of Male individuals with the exact same qualifications but each individual is of a different race. 
+
+```{r, fig.dim = c(12, 10)}
 
 # Plot
 par(mfrow = c(1,2))
@@ -406,14 +417,23 @@ barplot(amazon_salaries_gender, names.arg = gender, col=c("blue", "red"),
         main = "AMZN: L1 Salary Based on Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
 barplot(google_salaries_gender, names.arg = gender, col=c("blue", "red"), 
         main = "GOOG: L1 Salary Based on Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
+```
+
+The graph above, displays the expected Entry Level (L1) salary of individuals with the exact same qualifications and race but each individual is of a different gender. 
+
+```{r, fig.dim = c(12, 8)}
 
 # Plot
 par(mfrow = c(1,2))
 barplot(amazon_salaries_education, names.arg = education_levels, col=rainbow(length(amazon_salaries_education)), 
-        main = "AMZN: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary))
+        main = "AMZN: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary),
+        cex.names = .58)
 barplot(google_salaries_education, names.arg = education_levels, col=rainbow(length(google_salaries_education)), 
-        main = "GOOG: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary))
+        main = "GOOG: L1 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary), 
+        cex.names = .58)
 ```
+
+The graph above, displays the expected Entry Level (L1) salary of individuals of the same race but each individual has a different level of educational experience. 
 
 ***
 
@@ -474,6 +494,13 @@ In the future, there are several areas of improvement we'd explore:
 - Gather more data from levels.fyi to ensure more even distribution and representation of salaries.
 - Use an official source of employee data such as a database from the U.S. Department of Labor.
 - Explore other models and techniques outside of linear regression to perhaps find a better model for prediction.
+
+```{r}
+#Will be used later for the discussion on why google entry level is so high
+#exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
+#exp(predict(aic_model_final, data.frame(company = "Google", level = "L1", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = race[i], Education = "Bachelor's Degree"), interval = "prediction"))
+```
+
 
 ***
 
@@ -643,6 +670,14 @@ Putting this in the appendix for now
 ```{r}
 #Create new column 'State' which converts location to just the state abbreviation
 #salaries$state = str_sub(salaries$location,-2,-1)
+```
+
+```{r}
+row_names = c("LOOCV-RMSE", "Shapiro Test", "BP Test", "Average RMSE Train", "Average RMSE Test", "Percent Error")
+column_names = c("Statistic", "Value")
+diagnostics = c(loocv_rmse_final, shapiro_final, bp_final, mean(rmse_trn), mean(rmse_tst), percent_error)
+df_results = data.frame(row_names, diagnostics)
+kable(df_results, "simple", col.names = column_names)
 ```
 
 By: Nicholas O. Brown, Ellie Jung, Angela Mei
