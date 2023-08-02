@@ -533,11 +533,7 @@ In our analysis, the Q-Q normal plots evolved across three models. In the first 
  
 Additionally, the first Residuals vs. Fitted Plot shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. The third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
 
-##### 3. Significance of Factors
-
-The inclusion of categorical variables such as gender, race, and education may imply societal or industry-specific trends affecting salary. These factors should be interpreted with caution and in the context of broader research and understanding.
-
-##### 4. Accuracy 
+##### 3. Accuracy 
 
 The final model we have selected demonstrated an accuracy rating of **`r 100 - percent_error`%**. This is indicative of the model's ability to fit the data, but it's worth noting that there may be room for further refinement and improvement. 
 
@@ -547,7 +543,7 @@ The Actual Vs. Predicted Salaries plot illustrates the correlation between our f
 
 The final model, known as `aic_model_final`, represents an intricate understanding of how various factors like company, years of experience, title, level, gender, race, and education interact to influence total yearly compensation. This is not only a strategic tool for HR professionals but also a subject of great interest for data science students like us, and potentially a valuable resource for sociological studies.
 
-The realization that factors such as gender, race, and education can significantly impact total yearly compensation even in tech companies brings additional depth to the model. It goes beyond mere corporate strategy, offering insights that can be applied in social science research to understand biases and inequalities in the workplace.
+The inclusion of categorical variables such as gender, race, and education may imply societal or industry-specific trends affecting salary. These factors should be interpreted with caution and in the context of broader research and understanding. Their realization in our model adds depth by highlighting how they can significantly impact total yearly compensation even in tech companies. This goes beyond mere corporate strategy, offering insights that can be applied in social science research to understand biases and inequalities in the workplace.
 
 Individuals seeking jobs, organizations aiming to design more tailored and competitive compensation plans, and researchers examining societal trends can all benefit from this model. The nuanced understanding of how different variables interplay offers a unique lens into the underlying dynamics of the job market.
 
