@@ -508,7 +508,7 @@ Our final model, `aic_model_final`, includes interactions between company, years
 
 We utilized the model to analyze different factors and draw comparisons. Below is a summary of the conclusions derived:
 
-##### 1. General Conclusions
+##### 1. General Trends
 - **Google's Salary vs. Amazon's**: Google tends to offer higher salaries than Amazon (Graph 1)
 - **Impact of Levels on Salary**: Salaries increase as levels rise (Graph 2)
 - **Tech vs. Non-tech Roles**: Tech roles command higher salaries compared to non-tech roles (Graph 3).
@@ -521,35 +521,23 @@ We utilized the model to analyze different factors and draw comparisons. Below i
 
 #### Key Findings
 
-##### 1. Interactions
+##### 1. Interactions, Transformations and Subset Selection
 
-The interactions between company, years of experience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome. Through the variable section process and utilizing model transformation techniques, our model achieved a higher Adjusted R (`r adj_initial` -> `r adj_final`), which indicates that our final model improved in calculating fitted values.
-  
-##### 2. Transformations and Subset Selection
-
-Log transformation of the total yearly compensation helped to linearize the relationship with predictors. Additionally, the use of Cook's distance to exclude influential points contributed to model robustness. 
+The interactions between company, years of experience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome. Log transformation of the total yearly compensation helped to linearize the relationship with predictors. Additionally, the use of Cook's distance to exclude influential points contributed to model robustness. 
   
 In our analysis, the Q-Q normal plots evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
  
 Additionally, the first Residuals vs. Fitted Plot shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. The third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
+
+##### 2. Model Fit
+
+Through the variable section process and utilizing model transformation techniques, our model achieved a higher Adjusted R (`r adj_initial` -> `r adj_final`), which indicates that our final model improved in calculating fitted values. ****RMSE discussion***
 
 ##### 3. Accuracy 
 
 The final model we have selected demonstrated an accuracy rating of **`r 100 - percent_error`%**. This is indicative of the model's ability to fit the data, but it's worth noting that there may be room for further refinement and improvement. 
 
 The Actual Vs. Predicted Salaries plot illustrates the correlation between our final model's salary predictions and the actual salaries. The points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries. 
-
-#### Utility of the Final Model
-
-The final model, known as `aic_model_final`, represents an intricate understanding of how various factors like company, years of experience, title, level, gender, race, and education interact to influence total yearly compensation. This is not only a strategic tool for HR professionals but also a subject of great interest for data science students like us, and potentially a valuable resource for sociological studies.
-
-The inclusion of categorical variables such as gender, race, and education may imply societal or industry-specific trends affecting salary. These factors should be interpreted with caution and in the context of broader research and understanding. Their realization in our model adds depth by highlighting how they can significantly impact total yearly compensation even in tech companies. This goes beyond mere corporate strategy, offering insights that can be applied in social science research to understand biases and inequalities in the workplace.
-
-Individuals seeking jobs, organizations aiming to design more tailored and competitive compensation plans, and researchers examining societal trends can all benefit from this model. The nuanced understanding of how different variables interplay offers a unique lens into the underlying dynamics of the job market.
-
-However, the model's utility is not without caveats. Its specific interactions and potential biases in data collection may limit its general application and scalability. The handling of sensitive areas such as gender and race requires thoughtful consideration, ensuring that insights align with ethical guidelines.
-
-In conclusion, `aic_model_final` is a robust and multifaceted tool. Its applications are broad, ranging from individual and organizational decision-making to broader sociological analysis. It must be leveraged thoughtfully to realize its full potential and contribute to a more informed and equitable society.
 
 #### Limitations and Areas for Improvement
 
@@ -565,6 +553,18 @@ In the future, there are several areas of improvement we'd explore:
 - Gather more data from levels.fyi to ensure more even distribution and representation of salaries.
 - Use an official source of employee data such as a database from the U.S. Department of Labor.
 - Explore other models and techniques outside of linear regression to perhaps find a better model for prediction.
+
+#### Conclusion
+
+The final model `aic_model_final` represents an intricate understanding of how various factors like company, years of experience, title, level, gender, race, and education interact to influence total yearly compensation. This is not only a strategic tool for HR professionals but also a subject of great interest for data science students like us, and potentially a valuable resource for sociological studies.
+
+The inclusion of categorical variables such as gender, race, and education may imply societal or industry-specific trends affecting salary. These factors should be interpreted with caution and in the context of broader research and understanding. Their realization in our model adds depth by highlighting how they can significantly impact total yearly compensation even in tech companies. This goes beyond mere corporate strategy, offering insights that can be applied in social science research to understand biases and inequalities in the workplace.
+
+Individuals seeking jobs, organizations aiming to design more tailored and competitive compensation plans, and researchers examining societal trends can all benefit from this model. The nuanced understanding of how different variables interplay offers a unique lens into the underlying dynamics of the job market.
+
+However, the model's utility is not without caveats. Its specific interactions and potential biases in data collection may limit its general application and scalability. The handling of sensitive areas such as gender and race requires thoughtful consideration, ensuring that insights align with ethical guidelines.
+
+In conclusion, `aic_model_final` is a robust and multifaceted tool. Its applications are broad, ranging from individual and organizational decision-making to broader sociological analysis. It must be leveraged thoughtfully to realize its full potential and contribute to a more informed and equitable society.
 
 ***
 
@@ -686,7 +686,6 @@ bptest(salaries_model_fix)
 #anova(salaries_model_two_int, salaries_model_three_int)
 
 ```
-
 
 Model Selection
 ```{r}
