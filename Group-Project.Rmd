@@ -234,6 +234,45 @@ for(i in 1:num_sims){
 ##### 7. Model Predictions  
 
 ```{r, message = FALSE, warning = FALSE}
+#Predicting a person's salary based upon their level
+level= c("L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8")
+amazon_salaries_level = rep(0, length(level))
+google_salaries_level = rep(0, length(level))
+
+for(i in 1:length(level)) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = level[i], title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree")))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = level[i], title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree")))
+
+  amazon_salaries_level[i] = sal1
+  google_salaries_level[i] = sal2
+}
+
+#Predicting a person's salary based upon their years of experience
+years = c(0, 5, 10, 15, 20, 25, 30, 35, 40)
+amazon_salaries_years = rep(0, length(years))
+google_salaries_years = rep(0, length(years))
+
+for(i in 1:length(years)) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L3", title = "Software Engineer", yearsofexperience = years[i], gender = "Male", Race = "White", Education = "Bachelor's Degree")))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L3", title = "Software Engineer", yearsofexperience = years[i], gender = "Male", Race = "White", Education = "Bachelor's Degree")))
+
+  amazon_salaries_years[i] = sal1
+  google_salaries_years[i] = sal2
+}
+
+#Predicting a person's salary based upon their title
+title = c("Sales", "Human Resources", "Product Manager", "Software Engineer", "Data Scientist")
+amazon_salaries_title = rep(0, length(title))
+google_salaries_title = rep(0, length(title))
+
+for(i in 1:length(title)) {
+  sal1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L3", title = title[i], yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree")))
+  sal2 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L3", title = title[i], yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree")))
+
+  amazon_salaries_title[i] = sal1
+  google_salaries_title[i] = sal2
+}
+
 #Initializing variables for predicting a persons salary based upon their race
 race = c("White", "Black", "Hispanic", "Asian", "Two Or More")
 amazon_salaries_race = rep(0, length(unique(salaries$Race)))
@@ -277,26 +316,6 @@ for(i in 1:length(education_levels)) {
   amazon_salaries_education[i] = sal1
   google_salaries_education[i] = sal2
 }
-
-#Predict salaries across each quartile
-employee_q1 = data.frame(company = "Amazon", level = "L3", title = "Human Resources", yearsofexperience = 5, gender = "Female", Race = "Asian", Education = "Master's Degree") #61000
-employee_q2 = data.frame(company = "Google", level = "L8", title = "Technical Program Manager", yearsofexperience = 22, gender = "Female", Race = "White", Education = "Bachelor's Degree") #694000
-employee_q3 = data.frame(company = "Amazon", level = "L7", title = "Software Engineering Manager", yearsofexperience = 18, gender = "Other", Race = "Two Or More", Education = "Master's Degree") #800000
-employee_q4 = data.frame(company = "Google", level = "L8", title = "Software Engineer", yearsofexperience = 23, gender = "Male", Race = "White", Education = "Bachelor's Degree") #1160000
-
-pred_salary_q1 = exp(predict(aic_model_final, newdata = employee_q1))
-pred_salary_q2 = exp(predict(aic_model_final, newdata = employee_q2))
-pred_salary_q3 = exp(predict(aic_model_final, newdata = employee_q3))
-pred_salary_q4 = exp(predict(aic_model_final, newdata = employee_q4))
-actual_salary_q1 = 61000
-actual_salary_q2 = 694000
-actual_salary_q3 = 800000
-actual_salary_q4 = 1160000
-
-pe_q1 = get_percent_error(pred_salary_q1, actual_salary_q1)
-pe_q2 = get_percent_error(pred_salary_q2, actual_salary_q2)
-pe_q3 = get_percent_error(pred_salary_q3, actual_salary_q3)
-pe_q4 = get_percent_error(pred_salary_q4, actual_salary_q4)
 
 ##Predicted L1 salaries based on company 
 amazon_l1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L3", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree"), interval = "prediction"))[1]
@@ -387,60 +406,92 @@ abline(0, 1, col = "dodgerblue")
 
 ##### 6. Practical Application of Model 
 
-Table of Predicted Vs. Actual Salaries in Four Quartiles:
-```{r}
-row_names = c("First", "Second", "Third", "Fourth")
-column_names = c("Quartile", "Predicted", "Actual", "Percent Error")
-pred_salaries = c(pred_salary_q1, pred_salary_q2, pred_salary_q3, pred_salary_q4)
-actual_salaries = c(actual_salary_q1, actual_salary_q2, actual_salary_q3, actual_salary_q4)
-pe_salaries = c(round(pe_q1, 2), round(pe_q2, 2), round(pe_q3, 2), round(pe_q4, 2))
-df_results = data.frame(row_names, pred_salaries, actual_salaries, pe_salaries)
-kable(df_results, "simple", col.names = column_names)
-```
-
 Comparison Plots of Salaries Across Different Factors:
 ```{r, fig.dim = c(12, 10)}
 # Define common y-axis limits
-max_salary = max(c(amazon_salaries_race, google_salaries_race))*1.1
+max_salary = max(c(amazon_salaries_level, google_salaries_level))*1.1
+
+# Plot
+par(mfrow = c(1,2))
+barplot(amazon_salaries_level, names.arg = level, col=rainbow(length(amazon_salaries_level)), 
+        main = "AMZN: Salary Based on Level", xlab = "Level", ylab = "Total Compensation", ylim = c(0, max_salary))
+barplot(google_salaries_level, names.arg = level, col=rainbow(length(google_salaries_level)), 
+        main = "GOOG: Salary Based on Level", xlab = "Level", ylab = "Total Compensation", ylim = c(0, max_salary))
 ```
 
+Graph 1 - The graph above, displays the expected salary of Male individuals with the exact same qualifications but each individual is of a different level.
+
 ```{r, fig.dim = c(12, 10)}
+# Define common y-axis limits
+max_salary = max(c(amazon_salaries_years, google_salaries_years))*1.1
+
+# Plot
+par(mfrow = c(1,2))
+barplot(amazon_salaries_years, names.arg = years, col=rainbow(length(amazon_salaries_years)), 
+        main = "AMZN: L3 Salary Based on Years of Experience", xlab = "Years of Experience", ylab = "Total Compensation", ylim = c(0, max_salary))
+barplot(google_salaries_years, names.arg = years, col=rainbow(length(google_salaries_years)), 
+        main = "GOOG: L3 Salary Based on Years of Experience", xlab = "Years of Experience", ylab = "Total Compensation", ylim = c(0, max_salary))
+```
+
+Graph 2 - The graph above, displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has different years of experience.
+
+```{r, fig.dim = c(12, 8)}
+# Define common y-axis limits
+max_salary = max(c(amazon_salaries_title, google_salaries_title))*1.1
+
+# Plot
+par(mfrow = c(1,2))
+barplot(amazon_salaries_title, names.arg = title, col=rainbow(length(amazon_salaries_title)), 
+        main = "AMZN: L3 Salary Based on Title", xlab = "Title", ylab = "Total Compensation", ylim = c(0, max_salary), cex.names = .6)
+barplot(google_salaries_title, names.arg = title, col=rainbow(length(google_salaries_title)), 
+        main = "GOOG: L3 Salary Based on Title", xlab = "Title", ylab = "Total Compensation", ylim = c(0, max_salary), cex.names = .6)
+```
+
+Graph 3 - The graph above, displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has a different job title (chosen from the subset of possible titles.)
+
+```{r, fig.dim = c(12, 8)}
+# Define common y-axis limits
+max_salary = max(c(amazon_salaries_race, google_salaries_race))*1.1
 
 # Plot
 par(mfrow = c(1,2))
 barplot(amazon_salaries_race, names.arg = race, col=rainbow(length(amazon_salaries_race)), 
-        main = "AMZN: L3 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
+        main = "AMZN: L3 Salary Based on Race", xlab = "Race", ylab = "Total Compensation", ylim = c(0, max_salary))
 barplot(google_salaries_race, names.arg = race, col=rainbow(length(google_salaries_race)), 
-        main = "GOOG: L3 Salary Based on Race", ylab = "Total Compensation", ylim = c(0, max_salary))
+        main = "GOOG: L3 Salary Based on Race", xlab = "Race", ylab = "Total Compensation", ylim = c(0, max_salary))
 ```
 
-Graph 1 - The graph above, displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual is of a different race. 
+Graph 4 - The graph above, displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual is of a different race. 
 
 ```{r, fig.dim = c(12, 10)}
+# Define common y-axis limits
+max_salary = max(c(amazon_salaries_gender, google_salaries_gender))*1.1
 
 # Plot
 par(mfrow = c(1,2))
 barplot(amazon_salaries_gender, names.arg = gender, col=c("blue", "red"), 
-        main = "AMZN: L3 Salary Based on Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
+        main = "AMZN: L3 Salary Based on Gender", xlab = "Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
 barplot(google_salaries_gender, names.arg = gender, col=c("blue", "red"), 
-        main = "GOOG: L3 Salary Based on Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
+        main = "GOOG: L3 Salary Based on Gender", xlab = "Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
 ```
 
-Graph 2 - The graph above, displays the expected Entry Level (L3) salary of individuals with the exact same qualifications and race but each individual is of a different gender. 
+Graph 5 - The graph above, displays the expected Entry Level (L3) salary of individuals with the exact same qualifications and race but each individual is of a different gender. 
 
 ```{r, fig.dim = c(12, 8)}
+# Define common y-axis limits
+max_salary = max(c(amazon_salaries_education, google_salaries_education))*1.1
 
 # Plot
 par(mfrow = c(1,2))
 barplot(amazon_salaries_education, names.arg = education_levels, col=rainbow(length(amazon_salaries_education)), 
-        main = "AMZN: L3 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary),
-        cex.names = .58)
+        main = "AMZN: L3 Salary Based on Education Level", xlab = "Education", ylab = "Total Compensation", ylim = c(0, max_salary),
+        cex.names = .6)
 barplot(google_salaries_education, names.arg = education_levels, col=rainbow(length(google_salaries_education)), 
-        main = "GOOG: L3 Salary Based on Education Level", ylab = "Total Compensation", ylim = c(0, max_salary), 
-        cex.names = .58)
+        main = "GOOG: L3 Salary Based on Education Level", xlab = "Education", ylab = "Total Compensation", ylim = c(0, max_salary), 
+        cex.names = .6)
 ```
 
-Graph 3 - The graph above, displays the expected Entry Level (L3) salary of individuals of the same race but each individual has a different level of educational experience. 
+Graph 6 - The graph above, displays the expected Entry Level (L3) salary of individuals of the same race but each individual has a different level of educational experience. 
 
 ***
 
@@ -456,13 +507,14 @@ Our final model, `aic_model_final`, includes interactions between company, years
 
 General Conclusions
 - Google higher salary than Amazon
-- Salaries get higher as levels increase (pos. coefficient)
-- Salaries get higher as years of experience increase (pos. coefficient)
+- Salaries get higher as levels increase (Graph 1)
+- Salaries get higher as years of experience increase (Graph 2)
+- Tech roles have higher salaries than non-tech roles (Graph 3)
 
 Social Factors:
-- Race (Graph 1)
-- Gender (Graph 2)
-- Education (Graph 3)
+- Race (Graph 4)
+- Gender (Graph 5)
+- Education (Graph 6)
 
 #### Key Findings
 
