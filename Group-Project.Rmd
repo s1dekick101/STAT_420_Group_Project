@@ -371,7 +371,7 @@ abline(h = 0, col = "darkorange", lwd = 2)
 ```{r}
 plot(pred_salary, actual_salary,
      col = "darkgrey",
-     xlab = "Predicted Salaries Prices",
+     xlab = "Predicted Salaries",
      ylab = "Actual Salaries",
      main = "Predicted vs. Actual Salaries",
      xlim = c(0, max_pe_salary),
@@ -445,6 +445,16 @@ Graph 3 - The graph above, displays the expected Entry Level (L3) salary of indi
 
 Our final model, `aic_model_final`, includes interactions between company, years of experience, and title, along with other factors such as level, gender, race, and education. The model was carefully constructed through multiple steps including log transformation, interaction exploration, and removal of influential data points.
 
+General Conclusions
+- Google higher salary than Amazon
+- Salaries get higher as levels increase (pos. coefficient)
+- Salaries get higher as years of experience increase (pos. coefficient)
+
+Social Factors:
+- Race (Graph 1)
+- Gender (Graph 2)
+- Education (Graph 3)
+
 #### Key Findings
 
 ##### 1.Interactions
@@ -469,12 +479,6 @@ The final model we have selected demonstrated an accuracy rating of **`r 100 - p
 
 The Actual Vs. Predicted Salaries plot illustrates the correlation between our final model's salary predictions and the actual salaries. The points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries. 
 
-Graph 1 - WILL DO
-
-Graph 2 - WILL DO
-
-Graph 3 - WILL DO
-
 #### Utility of the Final Model
 
 The final model, known as `aic_model_final`, represents an intricate understanding of how various factors like company, years of experience, title, level, gender, race, and education interact to influence total yearly compensation. This is not only a strategic tool for HR professionals but also a subject of great interest for data science students like us, and potentially a valuable resource for sociological studies.
@@ -495,7 +499,7 @@ options(scipen = 999)
 
 There were various lessons learned while conducting this project. The first challenge the team encountered was during the initial data preparation phase. Because the dataset was a) crowd-sourced and b) scraped from a website, this led to many errors and inconsistencies which required vigorous data cleaning. The team used techniques including clustering, spell checks, removing missing fields, and cross validation in order to standardize the dataset. Ultimately, although we were able to produce a dataset fit for analysis, we were still limited by needing to rely on a user's "standard of truth" instead of an official or confirmed source. For example, a user could easily have input random attributes and we would have no way of knowing.
 
-This leads to the next issue we faced, which was that the raw data was not evenly distributed across the various attributes. The data was heavily skewed towards mid-level entries, and we did not have data for nearly as many entry-level or executive-level positions.  Additionally, there were far more entries for Amazon than Google employees. Thus, this presented a challenge when trying to build the model under LINE assumptions. For example, two individuals with the exact same given parameters expect for the `company` variable for had drastically different L1 predicted salaries.
+This leads to the next issue we faced, which was that the raw data was not evenly distributed across the various attributes. The data was heavily skewed towards mid-level entries, and we did not have data for nearly as many entry-level or executive-level positions.  Additionally, there were far more entries for Amazon than Google employees. Thus, this presented a challenge when trying to build the model under LINE assumptions. For example, two individuals with the exact same given parameters except for the `company` variable for had drastically different L1 predicted salaries.
 
 - Amazon: $`r round(amazon_l1, 2)`
 - Google: $`r round(google_l1, 2)`
