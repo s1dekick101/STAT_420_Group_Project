@@ -570,110 +570,45 @@ In conclusion, `aic_model_final` is a robust and multifaceted tool. Its applicat
 
 ### <u>Appendix</u> 
 
-
-```{r warning=FALSE}
-#HERE FOR NOW BUT WILL BE CLEANED UP
-salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
-
-#Remove NA records
-salaries = na.omit(salaries)
-
-#Create new column 'State' which converts location to just the state abbreviation
-salaries$state = str_sub(salaries$location,-2,-1)
-
-#Changing some predictors to factors
-salaries$company = as.factor(salaries$company)
-salaries$level = as.factor(salaries$level)
-salaries$title = as.factor(salaries$title)
-salaries$location = as.factor(salaries$location)
-salaries$state = as.factor(salaries$state)
-salaries$gender = as.factor(salaries$gender)
-salaries$Race = as.factor(salaries$Race)
-salaries$Education = as.factor(salaries$Education)
-
-#Variable Selection: Removed variables that contain redundant information or lack of information 
-salaries = subset(salaries, select = c(company, level, title,
-                                       totalyearlycompensation,
-                                       yearsofexperience, yearsatcompany, tag,
-                                       gender, Race, state, Education))
-```
-
-
-Linear Model that includes all predictors
+AIC/BIC Models using forward and stepwise procedures 
 ```{r}
-salaries_model = lm(totalyearlycompensation ~ ., data = salaries)
-```
-
-AIC/BIC Models
-```{r}
-#Didnt use p but n was used for model BIC models  
-#p = length(coef(salaries_model))
-n = length(resid(salaries_model))
-
-#Backward AIC
-salaries_model_back_aic = step(salaries_model,
-                               direction = "backward", trace = 0)
-
-#Backward BIC
-salaries_model_back_bic = step(salaries_model, direction = "backward",
-                               k = log(nrow(salaries)), trace = 0)
-
-salaries_model_start = lm(totalyearlycompensation ~ 1, data = salaries)
-
 #Forward AIC
-salaries_model_forw_aic = step(salaries_model_start, 
+salaries_model_forw_aic = step(salaries_model, 
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
+                               gender + Race + Education + location,
                                direction = "forward", trace = 0)
 
 #Forward BIC
-salaries_model_forw_bic = step(salaries_model_start, 
+salaries_model_forw_bic = step(salaries_model, 
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
+                               gender + Race + Education + location,
                                direction = "forward", k = log(nrow(salaries)), trace = 0)
 
 #Stepwise AIC
-salaries_model_both_aic = step(salaries_model_start, 
+salaries_model_both_aic = step(salaries_model, 
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
+                               gender + Race + Education + location,
                                direction = "both", trace = 0)
 
 #Stepwise BIC
-salaries_model_both_bic = step(salaries_model_start, 
+salaries_model_both_bic = step(salaries_model, 
                                scope = totalyearlycompensation ~ company + level +
                                title + yearsofexperience + yearsatcompany + tag +
-                               gender + Race + Education + state,
+                               gender + Race + Education + location,
                                direction = "both", k = log(nrow(salaries)), trace = 0)
 ```
 
-
--- Using AIC searching methods we derive the same model that use 9 of the 10 given predictors
-
-  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_aic)[-1])`</u>**
-  
--- Using BIC searching methods we derive the same model that use 4 of the 10 given predictors
-
-  AIC Selected Predictors: **<u>`r all.vars(formula(salaries_model_both_bic)[-1])`</u>**
-
-
 Model 2 
 ```{r}
-library(lmtest)
-salaries_model_add = lm(log(totalyearlycompensation) ~ (yearsatcompany + company + title + state + level) ^ 2, data = salaries)
+salaries_model_add = lm(log(totalyearlycompensation) ~ (yearsatcompany + company + title + level) ^ 2, data = salaries)
  
-salaries_model_fix = lm(log(totalyearlycompensation) ~ (yearsatcompany + company + title + state + level) ^ 2, data = salaries, subset = cooks.distance(salaries_model_add) < 4 / length(cooks.distance(salaries_model_add)))
+salaries_model_fix = lm(log(totalyearlycompensation) ~ (yearsatcompany + company + title + level) ^ 2, data = salaries, subset = cooks.distance(salaries_model_add) < 4 / length(cooks.distance(salaries_model_add)))
 
 hist(resid(salaries_model_fix))
  
-#salaries_model_int = lm(totalyearlycompensation ~ level * title * yearsofexperience * yearsatcompany, data = salaries)
-
-#anova(salaries_model_add, salaries_model_int)
-#summary(salaries_model_int)
-
-#salaries_model_three_int = lm(totalyearlycompensation ~ company * level * yearsofexperience, data = salaries)
 
 qqnorm(resid(salaries_model_fix))
 qqline(resid(salaries_model_fix))
@@ -681,23 +616,10 @@ plot(fitted(salaries_model_fix), resid(salaries_model_fix))
 abline(h=0)
 shapiro.test(resid(salaries_model_fix))
 bptest(salaries_model_fix)
-#anova(salaries_model_add, salaries_model_two_int)
-
-#anova(salaries_model_two_int, salaries_model_three_int)
-
 ```
 
 Model Selection
 ```{r}
-library(car)
-library(lmtest)
-
-get_loocv_rmse = function(model){
-  sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
-}
-#start_model = lm(log(totalyearlycompensation) ~ . ^ 2, data = salaries)
-#aic_model = step(start_model, direction = "backward", trace = 0)
-#Check for collinearity
 car::vif(salaries_model_both_aic) #Nothing too bad, perhaps level is high
 
 #Transform log response and add interactions to predictors to improve normality, linearity, constant variance, adjusted R-squared, and loocv-RMSE
@@ -729,16 +651,11 @@ qqnorm(resid(aic_model_fix), main = "Normal Q-Q Plot", col = "darkgrey")
 qqline(resid(aic_model_fix), col = "dodgerblue", lwd = 2)
 ```
 
-Putting this in the appendix for now
-```{r}
-#Create new column 'State' which converts location to just the state abbreviation
-#salaries$state = str_sub(salaries$location,-2,-1)
-```
 
 ```{r}
-row_names = c("LOOCV-RMSE", "Shapiro Test", "BP Test", "Average RMSE Train", "Average RMSE Test", "Percent Error")
+row_names = c("LOOCV-RMSE", "Shapiro Test", "BP Test")
 column_names = c("Statistic", "Value")
-diagnostics = c(loocv_rmse_final, shapiro_final, bp_final, mean(rmse_trn), mean(rmse_tst), percent_error)
+diagnostics = c(loocv_rmse_final, shapiro_final, bp_final)
 df_results = data.frame(row_names, diagnostics)
 kable(df_results, "simple", col.names = column_names)
 ```
