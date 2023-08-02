@@ -601,57 +601,7 @@ salaries_model_both_bic = step(salaries_model,
                                direction = "both", k = log(nrow(salaries)), trace = 0)
 ```
 
-Model 2 
-```{r}
-salaries_model_add = lm(log(totalyearlycompensation) ~ (yearsatcompany + company + title + level) ^ 2, data = salaries)
- 
-salaries_model_fix = lm(log(totalyearlycompensation) ~ (yearsatcompany + company + title + level) ^ 2, data = salaries, subset = cooks.distance(salaries_model_add) < 4 / length(cooks.distance(salaries_model_add)))
-
-hist(resid(salaries_model_fix))
- 
-
-qqnorm(resid(salaries_model_fix))
-qqline(resid(salaries_model_fix))
-plot(fitted(salaries_model_fix), resid(salaries_model_fix))
-abline(h=0)
-shapiro.test(resid(salaries_model_fix))
-bptest(salaries_model_fix)
-```
-
-Model Selection
-```{r}
-car::vif(salaries_model_both_aic) #Nothing too bad, perhaps level is high
-
-#Transform log response and add interactions to predictors to improve normality, linearity, constant variance, adjusted R-squared, and loocv-RMSE
-aic_model_trans_2 = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + level + gender + Race + Education, data = salaries)
-
-aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + gender + Race + Education + level, data = salaries)
-
-anova(aic_model_trans, aic_model_trans_2)
-
-#Remove influential data from the model
-aic_model_fix = lm(log(totalyearlycompensation) ~ (company + yearsofexperience + title) ^ 2 + gender + Race + Education + level, data = salaries, subset = cooks.distance(aic_model_trans) < 4 / length(cooks.distance(aic_model_trans)))
-
-#Run diagnostics
-summary(aic_model_fix)$adj 
-get_loocv_rmse(aic_model_fix)
-shapiro.test(resid(aic_model_fix))
-bptest(aic_model_fix)
-
-#Plot diagnostics
-par(mfrow = c(1, 2))
-
-# Residuals vs Fitted values plot
-plot(fitted(aic_model_fix), resid(aic_model_fix), col = "grey", pch = 20,
-     xlab = "Fitted", ylab = "Residuals", main = "Fitted versus Residuals")
-abline(h = 0, col = "darkorange", lwd = 2)
-
-# Q-Q plot
-qqnorm(resid(aic_model_fix), main = "Normal Q-Q Plot", col = "darkgrey")
-qqline(resid(aic_model_fix), col = "dodgerblue", lwd = 2)
-```
-
-
+Unused Statistic's 
 ```{r}
 row_names = c("LOOCV-RMSE", "Shapiro Test", "BP Test")
 column_names = c("Statistic", "Value")
