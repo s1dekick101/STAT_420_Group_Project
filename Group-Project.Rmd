@@ -6,6 +6,7 @@ output:
   html_document: 
     theme: readable
     toc: yes
+    toc_depth: 5
 urlcolor: cyan
 ---
 
@@ -209,7 +210,7 @@ max_pe_salary = ifelse(max(actual_salary) > max(pred_salary), max(actual_salary)
 percent_error = get_percent_error(pred_salary, actual_salary)
 ```
 
-##### 6.Model Simulation  
+##### 6. Model Simulation  
 
 ```{r, message = FALSE, warning = FALSE}
 #Simulation Set-Up
@@ -317,7 +318,7 @@ for(i in 1:length(education_levels)) {
   google_salaries_education[i] = sal2
 }
 
-##Predicted L1 salaries based on company 
+##Predicted L3 salaries based on company 
 amazon_l1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L3", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree"), interval = "prediction"))[1]
 google_l1 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L3", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree"), interval = "prediction"))[1]
 ```
@@ -407,7 +408,7 @@ abline(0, 1, col = "dodgerblue")
 ##### 6. Practical Application of Model 
 
 Comparison Plots of Salaries Across Different Factors:
-```{r, fig.dim = c(12, 10)}
+```{r graph1, fig.dim = c(12, 10)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_level, google_salaries_level))*1.1
 
@@ -505,20 +506,22 @@ options(scipen = 999)
 
 Our final model, `aic_model_final`, includes interactions between company, years of experience, and title, along with other factors such as level, gender, race, and education. The model was carefully constructed through multiple steps including log transformation, interaction exploration, and removal of influential data points.
 
-General Conclusions
-- Google higher salary than Amazon
-- Salaries get higher as levels increase (Graph 1)
-- Salaries get higher as years of experience increase (Graph 2)
-- Tech roles have higher salaries than non-tech roles (Graph 3)
+We utilized the model to analyze different factors and draw comparisons. Below is a summary of the conclusions derived:
 
-Social Factors:
-- Race (Graph 4)
-- Gender (Graph 5)
-- Education (Graph 6)
+##### 1. General Conclusions
+- **Google's Salary vs. Amazon's**: Google tends to offer higher salaries than Amazon (Graph 1)
+- **Impact of Levels on Salary**: Salaries increase as levels rise (Graph 2)
+- **Tech vs. Non-tech Roles**: Tech roles command higher salaries compared to non-tech roles (Graph 3).
+
+##### 2.  Social Factors
+- **Race**: At both Amazon and Google, the highest predicted earners are individuals who are Asian or of Two or More races (Graph 4).
+- **Gender**: Males at both Amazon and Google earn approximately 4% more than their Female counterparts (Graph 5).
+- **Education**: Both companies predict the highest starting entry-level salaries for Ph.D. students; however, the second-highest predicted salary is for those with only some college experience (Graph 6).
+
 
 #### Key Findings
 
-##### 1.Interactions
+##### 1. Interactions
 
 The interactions between company, years of experience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome. Through the variable section process and utilizing model transformation techniques, our model achieved a higher Adjusted R (`r adj_initial` -> `r adj_final`), which indicates that our final model improved in calculating fitted values.
   
@@ -539,12 +542,6 @@ The inclusion of categorical variables such as gender, race, and education may i
 The final model we have selected demonstrated an accuracy rating of **`r 100 - percent_error`%**. This is indicative of the model's ability to fit the data, but it's worth noting that there may be room for further refinement and improvement. 
 
 The Actual Vs. Predicted Salaries plot illustrates the correlation between our final model's salary predictions and the actual salaries. The points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries. 
-
-Graph 1 - At both Amazon and Google, it appears the highest predicted earners are individuals that are Asian or comprised of Two or More races. 
-
-Graph 2 - At both Amazon and Google, Males earn ~ `r male_vs_female_salary*100`% more than their Female counterparts. 
-
-Graph 3 - At both Amazon and Google, it appears that Ph.D students are predicted to have the highest starting entry level salaries;however, the second highest predicted salary is of those with only some college experience. 
 
 #### Utility of the Final Model
 
