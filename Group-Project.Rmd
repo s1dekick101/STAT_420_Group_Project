@@ -70,9 +70,16 @@ First, we had to clean and prepare our data to make it fit for analysis. We remo
 Lastly, we excluded columns `basesalary`, `stockgrantvalue`, and `bonus` as we discovered that these fields were providing contradictory data. These three values are supposed to sum up to `totalyearlycompensation`; however, this was not the case the majority of the time. This is most likely due to faulty or missing user entry.
 
 ```{r message=FALSE, warning=FALSE}
-#Loading dataset and importing libraries
+#Importing libraries
 library(readr)
 library(stringr)
+library(car)
+library(lmtest)
+library(boot)
+library(knitr)
+library(caret)
+
+#Load dataset
 salaries = read_csv("Levels-Fyi-Salary-Data-Cleaned-US.csv")
 
 #Remove NA records
@@ -99,9 +106,6 @@ salaries = subset(salaries, select = c(company, level, title,
 ##### 1. Split the Dataset into Train/Test Data
 
 ```{r message=FALSE, warning=FALSE}
-#Importing library 
-library(caret)
-
 #Split the data 70-30 into train and test sets
 set.seed(22)
 trn_idx = createDataPartition(salaries$level, p = 0.7, list = F)
@@ -126,13 +130,13 @@ salaries_model_back_bic = step(salaries_model, direction = "backward",
                                k = log(nrow(trn)), trace = 0)
 ```
 
--- Using the AIC searching method, we derive a model that uses 7 of the 10 given predictors
+Using the AIC searching method, we derive a model that uses 7 of the 10 given predictors
 
-   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_aic)[-1])`</u>**
+--   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_aic)[-1])`</u>**
   
--- Using the BIC searching method, we derive a model that uses 4 of the 10 given predictors
+Using the BIC searching method, we derive a model that uses 4 of the 10 given predictors
 
-   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_bic)[-1])`</u>**
+--   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_bic)[-1])`</u>**
 
 ```{r}
 #Performing anova test on the AIC and BIC models 
@@ -145,6 +149,7 @@ Based upon the results of our test, we calculate a p-value of **`r anova(salarie
 #Checking the collinearity of the AIC model 
 car::vif(salaries_model_back_aic)
 ```
+
 None of the variance inflation factors are too high in `salaries_model_back_aic`, suggesting collinearity is not an issue. 
 
 ##### 3. Performing Model Transformations
@@ -159,6 +164,7 @@ aic_model_trans = lm(log(totalyearlycompensation) ~ (company + yearsofexperience
 #Performing anova test between the two models
 anova(aic_model_log, aic_model_trans)
 ```
+
 Based upon the results of our anova test, we calculated a p-value of < **`r anova(aic_model_log, aic_model_trans)[2, "Pr(>F)"]`** meaning that we reject the log model (`aic_model_log`) and prefer the larger transformation model (`aic_model_trans`). 
 
 ```{r}
@@ -173,12 +179,6 @@ The final model was saved as `aic_model_final`.
 ##### 4. Running Diagnostics
 
 ```{r message=FALSE, warning=FALSE}
-#Importing libraries
-library(car)
-library(lmtest)
-library(boot)
-library(knitr)
-
 #LOOCV RMSE Function - Gets the difference between the predicted values a model generates and the actual values 
 get_loocv_rmse = function(model){
   sqrt(mean((resid(model) / (1 - hatvalues(model))) ^ 2))
@@ -192,7 +192,6 @@ adj_final = summary(aic_model_final)$adj
 loocv_rmse_final = get_loocv_rmse(aic_model_final)
 shapiro_final = shapiro.test(resid(aic_model_final))$p.value
 bp_final = test = bptest(aic_model_final)$p.value
-loocv_rmse_final
 ```
 
 ##### 5. Percent Error 
@@ -274,7 +273,7 @@ for(i in 1:length(title)) {
   google_salaries_title[i] = sal2
 }
 
-#Initializing variables for predicting a persons salary based upon their race
+#Predicting a person's salary based upon their race
 race = c("White", "Black", "Hispanic", "Asian", "Two Or More")
 amazon_salaries_race = rep(0, length(unique(salaries$Race)))
 google_salaries_race = rep(0, length(unique(salaries$Race)))
@@ -287,7 +286,7 @@ for(i in 1:length(unique(salaries$Race))) {
   google_salaries_race[i] = sal2
 }
 
-# Initializing variables for predicting a person's salary based upon their gender
+#Predicting a person's salary based upon their gender
 gender = c("Male", "Female")
 amazon_salaries_gender = rep(0, length(gender))
 google_salaries_gender = rep(0, length(gender))
@@ -300,12 +299,12 @@ for(i in 1:length(gender)) {
   google_salaries_gender[i] = sal2
 }
 
-#Prediction of how much  more entry level male will be paid more than female counterpart 
+#Prediction of how much more males will be paid more than their female counterparts
 male_entry_salary = amazon_salaries_gender[1] + google_salaries_gender[1]
 female_entry_salary = amazon_salaries_gender[2] + google_salaries_gender[2]
 male_vs_female_salary = round(male_entry_salary / female_entry_salary - 1, 2) 
 
-# Initializing variables for predicting a person's salary based upon their education level
+#Predicting a person's salary based upon their education
 education_levels = c("Highschool", "Bachelor's Degree", "Master's Degree", "PhD", "Some College")
 amazon_salaries_education = rep(0, length(education_levels))
 google_salaries_education = rep(0, length(education_levels))
@@ -318,9 +317,9 @@ for(i in 1:length(education_levels)) {
   google_salaries_education[i] = sal2
 }
 
-##Predicted L3 salaries based on company 
-amazon_l1 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L3", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree"), interval = "prediction"))[1]
-google_l1 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L3", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree"), interval = "prediction"))[1]
+#Predicting a person's salary based upon their company
+amazon_l3 = exp(predict(aic_model_final, data.frame(company = "Amazon", level = "L3", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree"), interval = "prediction"))[1]
+google_l3 = exp(predict(aic_model_final, data.frame(company = "Google", level = "L3", title = "Software Engineer", yearsofexperience = 0, gender = "Male", Race = "White", Education = "Bachelor's Degree"), interval = "prediction"))[1]
 ```
 ***
 
@@ -367,7 +366,6 @@ qqline(resid(aic_model_log), col = "dodgerblue", lwd = 2)
 qqnorm(resid(aic_model_final), main = "Normal Q-Q Plot After All Transformations", col = "darkgrey")
 qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ```
-As more transformations were added to the model the wildness of the tails remained largely unchanged, which indicates that our dataset likely does not follow a normal distribution. 
 
 ##### 4. Residuals vs. Fitted Plots
 
@@ -420,7 +418,7 @@ barplot(google_salaries_level, names.arg = level, col=rainbow(length(google_sala
         main = "GOOG: Salary Based on Level", xlab = "Level", ylab = "Total Compensation", ylim = c(0, max_salary))
 ```
 
-Graph 1 - The graph above, displays the expected salary of Male individuals with the exact same qualifications but each individual is of a different level.
+Graph 1 - The graph above displays the expected salary of Male individuals with the exact same qualifications but each individual is of a different level.
 
 ```{r, fig.dim = c(12, 10)}
 # Define common y-axis limits
@@ -434,7 +432,7 @@ barplot(google_salaries_years, names.arg = years, col=rainbow(length(google_sala
         main = "GOOG: L3 Salary Based on Years of Experience", xlab = "Years of Experience", ylab = "Total Compensation", ylim = c(0, max_salary))
 ```
 
-Graph 2 - The graph above, displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has different years of experience.
+Graph 2 - The graph above displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has different years of experience.
 
 ```{r, fig.dim = c(12, 8)}
 # Define common y-axis limits
@@ -448,7 +446,7 @@ barplot(google_salaries_title, names.arg = title, col=rainbow(length(google_sala
         main = "GOOG: L3 Salary Based on Title", xlab = "Title", ylab = "Total Compensation", ylim = c(0, max_salary), cex.names = .6)
 ```
 
-Graph 3 - The graph above, displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has a different job title (chosen from the subset of possible titles.)
+Graph 3 - The graph above displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has a different job title (chosen from a subset of possible titles.)
 
 ```{r, fig.dim = c(12, 8)}
 # Define common y-axis limits
@@ -462,7 +460,7 @@ barplot(google_salaries_race, names.arg = race, col=rainbow(length(google_salari
         main = "GOOG: L3 Salary Based on Race", xlab = "Race", ylab = "Total Compensation", ylim = c(0, max_salary))
 ```
 
-Graph 4 - The graph above, displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual is of a different race. 
+Graph 4 - The graph above displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual is of a different race. 
 
 ```{r, fig.dim = c(12, 10)}
 # Define common y-axis limits
@@ -476,7 +474,7 @@ barplot(google_salaries_gender, names.arg = gender, col=c("blue", "red"),
         main = "GOOG: L3 Salary Based on Gender", xlab = "Gender", ylab = "Total Compensation", ylim = c(0, max_salary))
 ```
 
-Graph 5 - The graph above, displays the expected Entry Level (L3) salary of individuals with the exact same qualifications and race but each individual is of a different gender. 
+Graph 5 - The graph above displays the expected Entry Level (L3) salary of individuals with the exact same qualifications and race but each individual is of a different gender. 
 
 ```{r, fig.dim = c(12, 8)}
 # Define common y-axis limits
@@ -492,7 +490,7 @@ barplot(google_salaries_education, names.arg = education_levels, col=rainbow(len
         cex.names = .6)
 ```
 
-Graph 6 - The graph above, displays the expected Entry Level (L3) salary of individuals of the same race but each individual has a different level of educational experience. 
+Graph 6 - The graph above displays the expected Entry Level (L3) salary of individuals of the same race but each individual has a different level of educational experience. 
 
 ***
 
@@ -509,14 +507,14 @@ Our final model, `aic_model_final`, includes interactions between company, years
 We utilized the model to analyze different factors and draw comparisons. Below is a summary of the conclusions derived:
 
 ##### 1. General Trends
-- **Google's Salary vs. Amazon's**: Google tends to offer higher salaries than Amazon (Graph 1)
-- **Impact of Levels on Salary**: Salaries increase as levels rise (Graph 2)
-- **Tech vs. Non-tech Roles**: Tech roles command higher salaries compared to non-tech roles (Graph 3).
+- **Google vs. Amazon**: Google tends to offer higher salaries than Amazon (Graph 1).
+- **Impact of Levels on Salary**: Salaries increase as levels rise (Graph 2).
+- **Tech vs. Non-tech Job Titles**: Tech roles command higher salaries compared to non-tech roles (Graph 3).
 
 ##### 2.  Social Factors
-- **Race**: At both Amazon and Google, the highest predicted earners are individuals who are Asian or of Two or More races (Graph 4).
-- **Gender**: Males at both Amazon and Google earn approximately 4% more than their Female counterparts (Graph 5).
-- **Education**: Both companies predict the highest starting entry-level salaries for Ph.D. students; however, the second-highest predicted salary is for those with only some college experience (Graph 6).
+- **Race**: At both Amazon and Google, the highest predicted earners are individuals who are Asian or of 'Two or More' races (Graph 4).
+- **Gender**: Males at both Amazon and Google earn approximately 4% more than their female counterparts (Graph 5).
+- **Education**: Both companies predict the highest starting entry-level salaries for those with Ph.Ds; however, the second-highest predicted salary is for those with only 'some college' experience (Graph 6).
 
 
 #### Key Findings
@@ -525,13 +523,15 @@ We utilized the model to analyze different factors and draw comparisons. Below i
 
 The interactions between company, years of experience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome. Log transformation of the total yearly compensation helped to linearize the relationship with predictors. Additionally, the use of Cook's distance to exclude influential points contributed to model robustness. 
   
-In our analysis, the Q-Q normal plots evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
+In our analysis, the Q-Q normal plots evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model with the log response, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
  
-Additionally, the first Residuals vs. Fitted Plot shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. The third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
+Furthermore, the initial additive model's Residuals vs. Fitted plot shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. Lastly, the third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
 
 ##### 2. Model Fit
 
-Through the variable section process and utilizing model transformation techniques, our model achieved a higher Adjusted R (`r adj_initial` -> `r adj_final`), which indicates that our final model improved in calculating fitted values. ****RMSE discussion***
+Through utilizing the variable section process and applying model transformation techniques, our model achieved a higher Adjusted $R^2$ with each iteration (`r adj_initial` -> `r adj_final`). The higher Adjusted $R^2$ indicated that the 'goodness-of-fit' had improved and a larger portion of our response could be explained by the predictors. 
+
+It it worth calling out that through model simulation, the average Test RMSE was lower than the average Train RMSE. Although still relatively similar, the difference could indicate that there was a sampling bias or limited data in the two sets, which will be further discussed below. 
 
 ##### 3. Accuracy 
 
@@ -541,14 +541,13 @@ The Actual Vs. Predicted Salaries plot illustrates the correlation between our f
 
 #### Limitations and Areas for Improvement
 
-There were various lessons learned while conducting this project. The first challenge the team encountered was during the initial data preparation phase. Because the dataset was a) crowd-sourced and b) scraped from a website, this led to many errors and inconsistencies which required vigorous data cleaning. The team used techniques including clustering, spell checks, removing missing fields, and cross validation in order to standardize the dataset. Ultimately, although we were able to produce a dataset fit for analysis, we were still limited by needing to rely on a user's "standard of truth" instead of an official or confirmed source. For example, a user could easily have input random attributes and we would have no way of knowing.
+There were various lessons learned while conducting this project. The first challenge the team encountered was during the initial data preparation phase. Because the dataset was a) crowd-sourced and b) scraped from a website, this led to many errors and inconsistencies which required vigorous data cleaning. The team used techniques including clustering, spell checks, removing missing fields, and cross validation in order to standardize the dataset. We found ourselves limited by needing to rely on a user's "standard of truth" instead of an official or confirmed source. For example, a user could easily have input random attributes and we would have no way of knowing.
 
-This leads to the next issue we faced, which was that the raw data was not evenly distributed across the various attributes. The data was heavily skewed towards mid-level entries, and we did not have data for nearly as many entry-level or executive-level positions.  Additionally, there were far more entries for Amazon than Google employees. Thus, this presented a challenge when trying to build the model under LINE assumptions. For example, two individuals with the exact same given parameters except for the `company` variable for had drastically different L1 predicted salaries.
+This leads to the next issue we faced, which was that the raw data was not evenly distributed across the various attributes. The data was heavily skewed towards mid-level entries, and we did not have data for nearly as many entry-level or executive-level positions.  Additionally, there were far more entries for Amazon than Google employees. Given the large sample size, uneven representation, and huge variances across attributes, it was challenging to build the model under LINE assumptions. Although we were able to vastly improve the shape of the model in the Normal Q-Q and Fitted vs. Residuals plots above, our final model still yielded small p-values in the Shapiro-Wilks and BP tests.  
 
-- Amazon: $`r round(amazon_l1, 2)`
-- Google: $`r round(google_l1, 2)`
+Both points mentioned above, combined with our real-world knowledge of Amazon and Google salaries, brings into question some of our model inferences. For example, two individuals with the same parameters, one at Amazon and one at Google, have drastically different L3 predicted salaries (Amazon: \$`r round(amazon_l3, 0)`, Google: $`r round(google_l3, 0)`.) Similarly, we would also question that individuals with 'Some College' educations would earn more on average than those with 'Master's Degrees'. Ultimately, although we were able to produce the 'best' model, we were still constrained by the limitations of the data itself.
 
-In the future, there are several areas of improvement we'd explore:
+In the future, there are several areas of improvement we'd like to explore:
 
 - Gather more data from levels.fyi to ensure more even distribution and representation of salaries.
 - Use an official source of employee data such as a database from the U.S. Department of Labor.
@@ -601,7 +600,7 @@ salaries_model_both_bic = step(salaries_model,
                                direction = "both", k = log(nrow(salaries)), trace = 0)
 ```
 
-Unused Statistic's 
+Unused Statistics 
 ```{r}
 row_names = c("LOOCV-RMSE", "Shapiro Test", "BP Test")
 column_names = c("Statistic", "Value")
