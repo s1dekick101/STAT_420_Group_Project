@@ -1,5 +1,5 @@
 ---
-title: "Data Analysis of Tech. Salaries at Amazon and Google"
+title: "Data Analysis of Salaries at Amazon and Google"
 author: "The Statisticians"
 date: "`r Sys.Date()`"
 output:
@@ -16,9 +16,7 @@ As data science students, we're intrigued by the compensation structures within 
 
 This dataset, `Levels-Fyi-Salary-Data-Cleaned-US.csv`, provides a unique and in-depth perspective into the salary structures of numerous top-tier companies. The dataset encompasses 28 variables, covering a variety of aspects such as company, level, title, location, years of experience, years at the company, and various demographic factors including gender and education level. Of particular interest to us is the `totalyearlycompensation` variable, which will serve as the response variable in our analysis.
 
-Our interest in this dataset is driven by our curiosity about the factors that influence annual compensation in top companies. We aim to identify the key variables and their interactions that significantly impact salary levels. This would provide insights that could be invaluable to a variety of stakeholders, from job seekers and employees to human resource professionals and policymakers.
-
-The primary goal of creating a model with this data is to predict the `totalyearlycompensation` based on a set of predictor variables. This model will help us understand how different variables, including categorical ones like `level` and numeric ones such as `yearsofexperience` and `yearsatcompany`, contribute to the total yearly compensation of an employee. Through this process, we also hope to identify potential trends, anomalies, or points of interest that could provide further avenues for exploration and analysis.
+Our interest in this dataset is driven by our curiosity about the factors that influence annual compensation in top companies. We aim to identify the key variables and their interactions that significantly impact salary levels. This model will help us understand how different variables, including categorical ones like `level` and numeric ones such as `yearsofexperience` and `yearsatcompany`, contribute to the total yearly compensation of an employee. This would provide insights that could be invaluable to a variety of stakeholders, from job seekers and employees to human resource professionals and policymakers. Through this process, we also hope to identify potential trends, anomalies, or points of interest that could provide further avenues for exploration and analysis.
 
 ***
 
@@ -28,8 +26,7 @@ The primary goal of creating a model with this data is to predict the `totalyear
 options(digits = 4)
 ```
 
-
-#### Description of the original data file
+#### Original Dataset's Column Descriptions
 - `timestamp`: Timestamp of data entry
 - `company`: The company the employee works for, either Amazon or Google
 - `level`: The rank of the employee, ranging from L1 through L10
@@ -130,11 +127,11 @@ salaries_model_back_bic = step(salaries_model, direction = "backward",
                                k = log(nrow(trn)), trace = 0)
 ```
 
-Using the AIC searching method, we derive a model that uses 7 of the 10 given predictors
+Using the AIC searching method, we derived a model that uses 7 of the 10 given predictors
 
 --   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_aic)[-1])`</u>**
   
-Using the BIC searching method, we derive a model that uses 4 of the 10 given predictors
+Using the BIC searching method, we derived a model that uses 4 of the 10 given predictors
 
 --   Selected Predictors: **<u>`r all.vars(formula(salaries_model_back_bic)[-1])`</u>**
 
@@ -143,7 +140,7 @@ Using the BIC searching method, we derive a model that uses 4 of the 10 given pr
 anova(salaries_model_back_bic, salaries_model_back_aic)
 ```
 
-Based upon the results of our test, we calculate a p-value of **`r anova(salaries_model_back_bic, salaries_model_back_aic)[2, "Pr(>F)"]`** meaning that we reject the BIC model and accept the larger AIC model (`salaries_model_back_aic`). 
+Based upon the results of our test, we calculated a p-value of **`r anova(salaries_model_back_bic, salaries_model_back_aic)[2, "Pr(>F)"]`** meaning that we rejected the BIC model and accepted the larger AIC model (`salaries_model_back_aic`). 
 
 ```{r}
 #Checking the collinearity of the AIC model 
@@ -371,7 +368,7 @@ qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ##### 4. Residuals vs. Fitted Plots
 <a id="resid_fitted"></a>
 
-Comparison of the progression of Fitted Vs. Residuals plots through model selection:
+Comparison of the progression of Fitted vs. Residuals plots through model selection:
 ```{r, fig.dim = c(12, 10)}
 par(mfrow = c(1,3))
 
@@ -514,18 +511,17 @@ options(scipen = 999)
 
 Our final model, `aic_model_final`, includes interactions between company, years of experience, and title, along with other factors such as level, gender, race, and education. The model was carefully constructed through multiple steps including log transformation, interaction exploration, and removal of influential data points.
 
-We utilized the model to analyze different factors and draw comparisons. Below is a summary of the conclusions derived:
+We utilized the model to analyze different factors and draw comparisons. Below is a summary of the conclusions we derived:
 
 ##### 1. General Trends
 - **Google vs. Amazon**: Google tends to offer higher salaries than Amazon [(Graph 1)](#graph1).
 - **Impact of Levels on Salary**: Salaries increase as levels rise [(Graph 2)](#graph2).
-- **Tech vs. Non-tech Job Titles**: Tech roles command higher salaries compared to non-tech roles [(Graph 3)](#graph3).
+- **Tech vs. Non-Tech Job Titles**: Tech roles command higher salaries compared to non-tech roles [(Graph 3)](#graph3).
 
 ##### 2.  Social Factors
 - **Race**: At both Amazon and Google, the highest predicted earners are individuals who are Asian or of 'Two or More' races [(Graph 4)](#graph4).
 - **Gender**: Males at both Amazon and Google earn approximately 4% more than their female counterparts [(Graph 5)](#graph5).
 - **Education**: Both companies predict the highest starting entry-level salaries for those with Ph.Ds; however, the second-highest predicted salary is for those with only 'some college' experience [(Graph 6)](#graph6).
-
 
 #### Key Findings
 
@@ -533,7 +529,7 @@ We utilized the model to analyze different factors and draw comparisons. Below i
 
 The interactions between company, years of experience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome. Log transformation of the total yearly compensation helped to linearize the relationship with predictors. Additionally, the use of Cook's distance to exclude influential points contributed to model robustness. 
   
-In our analysis, the [Q-Q normal plots](#qqplots) evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model with the log response, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
+In our analysis, the [Normal Q-Q plots](#qqplots) evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model with the log response, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
  
 Furthermore, the initial additive model's [Residuals vs. Fitted plot](#resid_fitted) shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. Lastly, the third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
 
@@ -547,7 +543,7 @@ It it worth calling out that through model simulation, the average Test RMSE was
 
 The final model we selected demonstrated an accuracy rating of **`r 100 - percent_error`%**. This is indicative of the model's ability to fit the data, but it's worth noting that there may be room for further refinement and improvement. 
 
-The [Actual Vs. Predicted Salaries plot](#percent_error) illustrates the correlation between our final model's salary predictions and the actual salaries. The points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries. 
+The [Actual vs. Predicted Salaries plot](#percent_error) illustrates the correlation between our final model's salary predictions and the actual salaries. Predictions appear to become less accurate as salary increased. However, the points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries.
 
 #### Limitations and Areas for Improvement
 
@@ -561,7 +557,7 @@ In the future, there are several areas of improvement we'd like to explore:
 
 - Gather more data from levels.fyi to ensure more even distribution and representation of salaries.
 - Use an official source of employee data such as a database from the U.S. Department of Labor.
-- Explore other models and techniques outside of linear regression to perhaps find a better model for prediction.
+- Explore other models and techniques outside of linear regression to find a potentially better predictive model.
 
 #### Conclusion
 
