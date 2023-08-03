@@ -349,6 +349,7 @@ kable(df_results, "simple", col.names = column_names)
 ```
 
 ##### 3. Q-Q Plots
+<a id="qqplots"></a>
 
 Comparison of the progression of Normal Q-Q plots through model selection:
 ```{r, fig.dim = c(12, 10)}
@@ -368,6 +369,7 @@ qqline(resid(aic_model_final), col = "dodgerblue", lwd = 2)
 ```
 
 ##### 4. Residuals vs. Fitted Plots
+<a id="resid_fitted"></a>
 
 Comparison of the progression of Fitted Vs. Residuals plots through model selection:
 ```{r, fig.dim = c(12, 10)}
@@ -390,6 +392,7 @@ abline(h = 0, col = "darkorange", lwd = 2)
 ```
 
 ##### 5. Percent Error - Fitted vs. Actual Salaries
+<a id="percent_error"></a>
 
 ```{r}
 plot(pred_salary, actual_salary,
@@ -406,6 +409,8 @@ abline(0, 1, col = "dodgerblue")
 ##### 6. Practical Application of Model 
 
 Comparison Plots of Salaries Across Different Factors:
+
+<a id = "graph1"></a>
 ```{r graph1, fig.dim = c(12, 10)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_level, google_salaries_level))*1.1
@@ -420,6 +425,7 @@ barplot(google_salaries_level, names.arg = level, col=rainbow(length(google_sala
 
 Graph 1 - The graph above displays the expected salary of Male individuals with the exact same qualifications but each individual is of a different level.
 
+<a id = "graph2"></a>
 ```{r, fig.dim = c(12, 10)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_years, google_salaries_years))*1.1
@@ -434,6 +440,7 @@ barplot(google_salaries_years, names.arg = years, col=rainbow(length(google_sala
 
 Graph 2 - The graph above displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has different years of experience.
 
+<a id = "graph3"></a>
 ```{r, fig.dim = c(12, 8)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_title, google_salaries_title))*1.1
@@ -448,6 +455,7 @@ barplot(google_salaries_title, names.arg = title, col=rainbow(length(google_sala
 
 Graph 3 - The graph above displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual has a different job title (chosen from a subset of possible titles.)
 
+<a id = "graph4"></a>
 ```{r, fig.dim = c(12, 8)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_race, google_salaries_race))*1.1
@@ -462,6 +470,7 @@ barplot(google_salaries_race, names.arg = race, col=rainbow(length(google_salari
 
 Graph 4 - The graph above displays the expected Entry Level (L3) salary of Male individuals with the exact same qualifications but each individual is of a different race. 
 
+<a id = "graph5"></a>
 ```{r, fig.dim = c(12, 10)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_gender, google_salaries_gender))*1.1
@@ -476,6 +485,7 @@ barplot(google_salaries_gender, names.arg = gender, col=c("blue", "red"),
 
 Graph 5 - The graph above displays the expected Entry Level (L3) salary of individuals with the exact same qualifications and race but each individual is of a different gender. 
 
+<a id = "graph6"></a>
 ```{r, fig.dim = c(12, 8)}
 # Define common y-axis limits
 max_salary = max(c(amazon_salaries_education, google_salaries_education))*1.1
@@ -507,14 +517,14 @@ Our final model, `aic_model_final`, includes interactions between company, years
 We utilized the model to analyze different factors and draw comparisons. Below is a summary of the conclusions derived:
 
 ##### 1. General Trends
-- **Google vs. Amazon**: Google tends to offer higher salaries than Amazon (Graph 1).
-- **Impact of Levels on Salary**: Salaries increase as levels rise (Graph 2).
-- **Tech vs. Non-tech Job Titles**: Tech roles command higher salaries compared to non-tech roles (Graph 3).
+- **Google vs. Amazon**: Google tends to offer higher salaries than Amazon [(Graph 1)](#graph1).
+- **Impact of Levels on Salary**: Salaries increase as levels rise [(Graph 2)](#graph2).
+- **Tech vs. Non-tech Job Titles**: Tech roles command higher salaries compared to non-tech roles [(Graph 3)](#graph3).
 
 ##### 2.  Social Factors
-- **Race**: At both Amazon and Google, the highest predicted earners are individuals who are Asian or of 'Two or More' races (Graph 4).
-- **Gender**: Males at both Amazon and Google earn approximately 4% more than their female counterparts (Graph 5).
-- **Education**: Both companies predict the highest starting entry-level salaries for those with Ph.Ds; however, the second-highest predicted salary is for those with only 'some college' experience (Graph 6).
+- **Race**: At both Amazon and Google, the highest predicted earners are individuals who are Asian or of 'Two or More' races [(Graph 4)](#graph4).
+- **Gender**: Males at both Amazon and Google earn approximately 4% more than their female counterparts [(Graph 5)](#graph5).
+- **Education**: Both companies predict the highest starting entry-level salaries for those with Ph.Ds; however, the second-highest predicted salary is for those with only 'some college' experience [(Graph 6)](#graph6).
 
 
 #### Key Findings
@@ -523,9 +533,9 @@ We utilized the model to analyze different factors and draw comparisons. Below i
 
 The interactions between company, years of experience, and title suggest that the relationship between these factors and total yearly compensation is not simply additive. This reflects the complexity of compensation structures in the real world, where various elements can synergistically affect the outcome. Log transformation of the total yearly compensation helped to linearize the relationship with predictors. Additionally, the use of Cook's distance to exclude influential points contributed to model robustness. 
   
-In our analysis, the Q-Q normal plots evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model with the log response, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
+In our analysis, the [Q-Q normal plots](#qqplots) evolved across three models. In the first plot, the pattern formed by the plot points was nearly parallel to the diagonal line, with a wide y-axis range, indicating non-normality and potential outliers. As we moved to the second model with the log response, the y-axis range narrowed, and the pattern of the points started to resemble a more typical diagonal alignment, reflecting an improvement in normality. The third model continued this trend, though the most substantial shift occurred between the first and second models. These transitions signify our progression toward satisfying the normality assumption in the residual errors, a critical aspect in linear regression modeling.
  
-Furthermore, the initial additive model's Residuals vs. Fitted plot shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. Lastly, the third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
+Furthermore, the initial additive model's [Residuals vs. Fitted plot](#resid_fitted) shows residuals clustering together, indicating potential non-linearity. In the second plot, the residuals begin to disperse, suggesting an improvement in linearity. Lastly, the third plot further demonstrates this trend, with residuals more randomly scattered, adhering better to the assumptions of linear regression. The progression across these plots illustrates the model's refinement and increased ability to capture the underlying relationship in the data.
 
 ##### 2. Model Fit
 
@@ -537,7 +547,7 @@ It it worth calling out that through model simulation, the average Test RMSE was
 
 The final model we selected demonstrated an accuracy rating of **`r 100 - percent_error`%**. This is indicative of the model's ability to fit the data, but it's worth noting that there may be room for further refinement and improvement. 
 
-The Actual Vs. Predicted Salaries plot illustrates the correlation between our final model's salary predictions and the actual salaries. The points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries. 
+The [Actual Vs. Predicted Salaries plot](#percent_error) illustrates the correlation between our final model's salary predictions and the actual salaries. The points are largely concentrated around the diagonal line, where predicted values would equal actual values. This concentration signifies that the predictions are generally close to the actual figures, indicating the model's robustness and accuracy in predicting salaries. 
 
 #### Limitations and Areas for Improvement
 
@@ -609,7 +619,7 @@ df_results = data.frame(row_names, diagnostics)
 kable(df_results, "simple", col.names = column_names)
 ```
 
-By: Nicholas O. Brown, Ellie Jung, Angela Mei
+###### By: Nicholas O. Brown, Ellie Jung, Angela Mei
 
 ***
 
