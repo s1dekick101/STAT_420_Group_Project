@@ -67,7 +67,7 @@ First, we had to clean and prepare our data to make it fit for analysis. We remo
 Lastly, we excluded columns `basesalary`, `stockgrantvalue`, and `bonus` as we discovered that these fields were providing contradictory data. These three values are supposed to sum up to `totalyearlycompensation`; however, this was not the case the majority of the time. This is most likely due to faulty or missing user entry.
 
 ```{r message=FALSE, warning=FALSE}
-#Importing libraries
+#Imported libraries
 library(readr)
 library(stringr)
 library(car)
@@ -296,7 +296,7 @@ for(i in 1:length(gender)) {
   google_salaries_gender[i] = sal2
 }
 
-#Prediction of how much more males will be paid more than their female counterparts
+#Predicting how much more Males will be paid more than their Female counterparts
 male_entry_salary = amazon_salaries_gender[1] + google_salaries_gender[1]
 female_entry_salary = amazon_salaries_gender[2] + google_salaries_gender[2]
 male_vs_female_salary = round(male_entry_salary / female_entry_salary - 1, 2) 
@@ -535,7 +535,7 @@ Furthermore, the initial additive model's [Residuals vs. Fitted plot](#resid_fit
 
 ##### 2. Model Fit
 
-Through utilizing the variable section process and applying model transformation techniques, our model achieved a higher Adjusted $R^2$ with each iteration (`r adj_initial` -> `r adj_final`). The higher Adjusted $R^2$ indicated that the 'goodness-of-fit' had improved and a larger portion of our response could be explained by the predictors. 
+Through utilizing the variable section process and applying model transformation techniques, our model achieved a higher Adjusted $R^2$ with each iteration (`r adj_initial` -> `r adj_final`). The higher Adjusted $R^2$ indicated that the 'goodness-of-fit' had improved in our model and a larger portion of our response could be explained by the predictors. 
 
 It it worth calling out that through model simulation, the average Test RMSE was lower than the average Train RMSE. Although still relatively similar, the difference could indicate that there was a sampling bias or limited data in the two sets, which will be further discussed below. 
 
@@ -551,7 +551,7 @@ There were various lessons learned while conducting this project. The first chal
 
 This leads to the next issue we faced, which was that the raw data was not evenly distributed across the various attributes. The data was heavily skewed towards mid-level entries, and we did not have data for nearly as many entry-level or executive-level positions.  Additionally, there were far more entries for Amazon than Google employees. Given the large sample size, uneven representation, and huge variances across attributes, it was challenging to build the model under LINE assumptions. Although we were able to vastly improve the shape of the model in the Normal Q-Q and Fitted vs. Residuals plots above, our final model still yielded small p-values in the Shapiro-Wilks and BP tests.  
 
-Both points mentioned above, combined with our real-world knowledge of Amazon and Google salaries, brings into question some of our model inferences. For example, two individuals with the same parameters, one at Amazon and one at Google, have drastically different L3 predicted salaries (Amazon: \$`r round(amazon_l3, 0)`, Google: $`r round(google_l3, 0)`.) Similarly, we would also question that individuals with 'Some College' educations would earn more on average than those with 'Master's Degrees'. Ultimately, although we were able to produce the 'best' model, we were still constrained by the limitations of the data itself.
+Both points mentioned above, combined with our real-world knowledge of Amazon and Google salaries, brings into question some of our model inferences. For example, two individuals with the same parameters, one at Amazon and one at Google, have drastically different L3 predicted salaries (Amazon: \$`r round(amazon_l3, 0)` vs Google: $`r round(google_l3, 0)`.) Similarly, we would also question that individuals with 'Some College' educations would earn more on average than those with 'Master's Degrees'. Ultimately, although we were able to produce the 'best' model, we were still constrained by the limitations of the data itself.
 
 In the future, there are several areas of improvement we'd like to explore:
 
